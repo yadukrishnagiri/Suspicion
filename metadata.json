@@ -1,6 +1,0 @@
-{
-  "name": "Imposter",
-  "description": "In-person social deduction party game companion and secret word dealer.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
