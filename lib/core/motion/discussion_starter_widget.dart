@@ -37,7 +37,7 @@ class _DiscussionStarterWidgetState extends State<DiscussionStarterWidget>
       duration: MotionConstants.starterStageDuration,
     );
 
-    // Stage 2: Spotlight expands from center (0.1 to 0.5)
+    // Stage 2: Spotlight expands from center
     _spotlightScale = Tween<double>(begin: 0.1, end: 1.4).animate(
       CurvedAnimation(
         parent: _controller,
@@ -51,9 +51,9 @@ class _DiscussionStarterWidgetState extends State<DiscussionStarterWidget>
       ),
     );
 
-    // Stage 3: Starter name rises upward (0.4 to 0.8)
+    // Stage 3: Starter name rises upward
     _nameSlide = Tween<Offset>(
-      begin: const Offset(0.0, 0.5),
+      begin: const Offset(0.0, 0.4),
       end: Offset.zero,
     ).animate(
       CurvedAnimation(
@@ -68,7 +68,7 @@ class _DiscussionStarterWidgetState extends State<DiscussionStarterWidget>
       ),
     );
 
-    // Stage 5: "START THE DISCUSSION" banner (0.75 to 1.0)
+    // Stage 5: "START THE DISCUSSION"
     _bannerOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
@@ -76,7 +76,6 @@ class _DiscussionStarterWidgetState extends State<DiscussionStarterWidget>
       ),
     );
 
-    // Stage 4: Haptic trigger at peak moment
     _controller.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         AppHaptics.medium();
@@ -100,18 +99,18 @@ class _DiscussionStarterWidgetState extends State<DiscussionStarterWidget>
         return Stack(
           alignment: Alignment.center,
           children: [
-            // Expanding center spotlight
+            // Spotlight glow
             Transform.scale(
               scale: _spotlightScale.value,
               child: Container(
-                width: 280,
-                height: 280,
+                width: 300,
+                height: 300,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      AppColors.accent.withOpacity(_spotlightOpacity.value * 0.5),
-                      AppColors.accentGlow.withOpacity(_spotlightOpacity.value * 0.2),
+                      AppColors.gold.withOpacity(_spotlightOpacity.value * 0.35),
+                      AppColors.goldMuted.withOpacity(_spotlightOpacity.value * 0.1),
                       Colors.transparent,
                     ],
                   ),
@@ -121,36 +120,35 @@ class _DiscussionStarterWidgetState extends State<DiscussionStarterWidget>
 
             // Content
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: const EdgeInsets.symmetric(horizontal: 28),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Pre-title
                   Text(
-                    'FIRST SPEAKER CHOSEN',
+                    'THE FIRST SPEAKER',
                     style: AppTextStyles.labelCaps.copyWith(
-                      color: AppColors.textMuted,
-                      letterSpacing: 3.5,
+                      color: AppColors.textSecondary,
+                      letterSpacing: 4.0,
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 28),
 
-                  // Avatar / Spotlight circle
+                  // Spotlight circle with initial
                   Container(
-                    width: 110,
-                    height: 110,
+                    width: 100,
+                    height: 100,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: AppColors.surfaceElevated,
                       border: Border.all(
-                        color: AppColors.accentGlow.withOpacity(_nameOpacity.value),
-                        width: 2.5,
+                        color: AppColors.gold.withOpacity(_nameOpacity.value),
+                        width: 2.0,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.accent.withOpacity(0.3 * _nameOpacity.value),
+                          color: AppColors.gold.withOpacity(0.25 * _nameOpacity.value),
                           blurRadius: 30,
-                          spreadRadius: 4,
+                          spreadRadius: 2,
                         ),
                       ],
                     ),
@@ -160,15 +158,15 @@ class _DiscussionStarterWidgetState extends State<DiscussionStarterWidget>
                             ? widget.starterName[0].toUpperCase()
                             : '?',
                         style: AppTextStyles.heroDisplay.copyWith(
-                          fontSize: 48,
-                          color: AppColors.textPrimary,
+                          fontSize: 44,
+                          color: AppColors.goldLight,
                         ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 28),
 
-                  // Stage 3: Starter name rises upward
+                  // Starter Name
                   SlideTransition(
                     position: _nameSlide,
                     child: Opacity(
@@ -178,37 +176,36 @@ class _DiscussionStarterWidgetState extends State<DiscussionStarterWidget>
                         textAlign: TextAlign.center,
                         style: AppTextStyles.heroDisplay.copyWith(
                           fontSize: 36,
-                          letterSpacing: 2.0,
+                          letterSpacing: 3.0,
                         ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 16),
 
-                  // Stage 5: Hero statement
+                  // Stage 5 Banner
                   Opacity(
                     opacity: _bannerOpacity.value,
                     child: Column(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                           decoration: BoxDecoration(
                             color: AppColors.surfaceBorderSubtle,
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: AppColors.surfaceBorder),
                           ),
                           child: Text(
-                            'START THE DISCUSSION',
-                            style: AppTextStyles.titleSmall.copyWith(
-                              color: AppColors.gold,
-                              letterSpacing: 2.0,
-                              fontWeight: FontWeight.w800,
+                            'OPENS THE FLOOR',
+                            style: AppTextStyles.labelCaps.copyWith(
+                              color: AppColors.goldLight,
+                              letterSpacing: 2.5,
                             ),
                           ),
                         ),
                         const SizedBox(height: 14),
                         Text(
-                          '${widget.starterName} begins by giving the first clue.',
+                          '${widget.starterName} must start by giving the first clue.',
                           textAlign: TextAlign.center,
                           style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
                         ),
@@ -220,11 +217,11 @@ class _DiscussionStarterWidgetState extends State<DiscussionStarterWidget>
                             width: double.infinity,
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
-                              color: AppColors.accent,
-                              borderRadius: BorderRadius.circular(20),
+                              gradient: AppColors.goldGradient,
+                              borderRadius: BorderRadius.circular(18),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppColors.accent.withOpacity(0.35),
+                                  color: AppColors.gold.withOpacity(0.25),
                                   blurRadius: 20,
                                   offset: const Offset(0, 6),
                                 ),

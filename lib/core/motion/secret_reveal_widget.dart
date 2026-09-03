@@ -4,6 +4,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../utils/haptics.dart';
 import 'motion_constants.dart';
+import 'spring_button.dart';
 
 class SecretRevealWidget extends StatefulWidget {
   final String secretWord;
@@ -36,8 +37,7 @@ class _SecretRevealWidgetState extends State<SecretRevealWidget>
 
   late Animation<double> _darkenAnimation;
   late Animation<double> _blurAnimation;
-  late Animation<double> _pulseAnimation;
-  late Animation<double> _pulseOpacity;
+  late Animation<double> _pulseScale;
   late Animation<double> _characterProgress;
   late Animation<double> _breathingGlow;
 
@@ -52,11 +52,11 @@ class _SecretRevealWidgetState extends State<SecretRevealWidget>
 
     _breathingController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2400),
+      duration: const Duration(milliseconds: 2600),
     )..repeat(reverse: true);
 
     // 1 & 2. Background softly darkens
-    _darkenAnimation = Tween<double>(begin: 0.0, end: 0.75).animate(
+    _darkenAnimation = Tween<double>(begin: 0.0, end: 0.85).animate(
       CurvedAnimation(
         parent: _revealController,
         curve: const Interval(0.0, 0.45, curve: Curves.easeOut),
@@ -64,28 +64,18 @@ class _SecretRevealWidgetState extends State<SecretRevealWidget>
     );
 
     // 3. Ambient blur grows
-    _blurAnimation = Tween<double>(begin: 0.0, end: 16.0).animate(
+    _blurAnimation = Tween<double>(begin: 0.0, end: 20.0).animate(
       CurvedAnimation(
         parent: _revealController,
-        curve: const Interval(0.1, 0.6, curve: Curves.easeOut),
+        curve: const Interval(0.1, 0.65, curve: Curves.easeOut),
       ),
     );
 
-    // 4. Tiny center light pulse
-    _pulseAnimation = Tween<double>(begin: 0.2, end: 2.2).animate(
+    // 4. Center warmth / light pulse
+    _pulseScale = Tween<double>(begin: 0.4, end: 1.8).animate(
       CurvedAnimation(
         parent: _revealController,
-        curve: const Interval(0.2, 0.65, curve: Curves.easeOutQuad),
-      ),
-    );
-
-    _pulseOpacity = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 0.0, end: 0.6), weight: 40),
-      TweenSequenceItem(tween: Tween(begin: 0.6, end: 0.15), weight: 60),
-    ]).animate(
-      CurvedAnimation(
-        parent: _revealController,
-        curve: const Interval(0.2, 0.75, curve: Curves.easeInOut),
+        curve: const Interval(0.2, 0.8, curve: Curves.easeOutCubic),
       ),
     );
 
@@ -98,7 +88,7 @@ class _SecretRevealWidgetState extends State<SecretRevealWidget>
     );
 
     // 6. Subtle breathing glow behind content
-    _breathingGlow = Tween<double>(begin: 0.25, end: 0.6).animate(
+    _breathingGlow = Tween<double>(begin: 0.15, end: 0.45).animate(
       CurvedAnimation(parent: _breathingController, curve: Curves.easeInOut),
     );
 
@@ -129,8 +119,8 @@ class _SecretRevealWidgetState extends State<SecretRevealWidget>
 
   @override
   Widget build(BuildContext context) {
-    final roleColor = widget.isImposter ? AppColors.imposter : AppColors.citizen;
-    final roleGlow = widget.isImposter ? AppColors.imposterGlow : AppColors.citizenGlow;
+    final themeColor = widget.isImposter ? AppColors.imposter : AppColors.gold;
+    final themeGlow = widget.isImposter ? AppColors.imposterGlow : AppColors.goldLight;
 
     return AnimatedBuilder(
       animation: Listenable.merge([_revealController, _breathingController]),
@@ -159,39 +149,38 @@ class _SecretRevealWidgetState extends State<SecretRevealWidget>
                     sigmaX: _blurAnimation.value,
                     sigmaY: _blurAnimation.value,
                   ),
-                  child: Container(color: Colors.transparent),
+                  child: const SizedBox.expand(),
                 ),
               ),
 
-            // Light pulse & breathing glow
+            // Subtle atmospheric light halo
             if (_revealController.value > 0.1)
               Positioned(
                 child: Transform.scale(
-                  scale: _pulseAnimation.value,
+                  scale: _pulseScale.value,
                   child: Container(
-                    width: 220,
-                    height: 220,
+                    width: 260,
+                    height: 260,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: roleColor.withOpacity(
-                            isCompleted ? _breathingGlow.value * 0.45 : _pulseOpacity.value,
+                      gradient: RadialGradient(
+                        colors: [
+                          themeColor.withOpacity(
+                            isCompleted ? _breathingGlow.value * 0.35 : 0.25,
                           ),
-                          blurRadius: 80,
-                          spreadRadius: 20,
-                        ),
-                      ],
+                          Colors.transparent,
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
 
-            // Content container
+            // Content
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: const EdgeInsets.symmetric(horizontal: 28),
               child: isCompleted
-                  ? _buildRevealedContent(roleColor, roleGlow, revealedSub)
+                  ? _buildRevealedContent(themeColor, themeGlow, revealedSub)
                   : _buildUnrevealedPrompt(),
             ),
           ],
@@ -206,46 +195,63 @@ class _SecretRevealWidgetState extends State<SecretRevealWidget>
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(28),
+            padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: AppColors.surfaceElevated,
               border: Border.all(color: AppColors.surfaceBorder, width: 1.5),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.4),
-                  blurRadius: 30,
-                  offset: const Offset(0, 10),
-                ),
-              ],
             ),
             child: const Icon(
-              Icons.fingerprint_rounded,
-              size: 72,
-              color: AppColors.accentGlow,
+              Icons.lock_outline_rounded,
+              size: 56,
+              color: AppColors.goldLight,
             ),
-          ),
-          const SizedBox(height: 28),
-          Text(
-            'TAP TO REVEAL SECRET',
-            style: AppTextStyles.labelCaps.copyWith(
-              color: AppColors.textPrimary,
-              letterSpacing: 3.0,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Make sure no one else is looking',
-            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textMuted),
           ),
           const SizedBox(height: 32),
-          ElevatedButton.icon(
-            onPressed: widget.onRevealTap,
-            icon: const Icon(Icons.visibility_rounded, size: 20),
-            label: const Text('REVEAL SECRET'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.accent,
-              minimumSize: const Size(220, 54),
+          Text(
+            'CONFIDENTIAL SECRET',
+            style: AppTextStyles.labelCaps.copyWith(
+              color: AppColors.textSecondary,
+              letterSpacing: 3.5,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Ensure only you can see this display.',
+            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textMuted),
+          ),
+          const SizedBox(height: 36),
+          SpringButton(
+            onTap: widget.onRevealTap,
+            child: Container(
+              height: 56,
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              decoration: BoxDecoration(
+                gradient: AppColors.goldGradient,
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.gold.withOpacity(0.2),
+                    blurRadius: 20,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              alignment: Alignment.center,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.remove_red_eye_outlined, size: 20, color: Colors.black),
+                  const SizedBox(width: 10),
+                  Text(
+                    'REVEAL YOUR IDENTITY',
+                    style: AppTextStyles.buttonText.copyWith(
+                      color: Colors.black,
+                      letterSpacing: 2.0,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -253,86 +259,101 @@ class _SecretRevealWidgetState extends State<SecretRevealWidget>
     );
   }
 
-  Widget _buildRevealedContent(Color roleColor, Color roleGlow, String partialWord) {
+  Widget _buildRevealedContent(Color themeColor, Color themeGlow, String partialWord) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Category pill
+        // Category
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           decoration: BoxDecoration(
-            color: AppColors.surfaceElevated.withOpacity(0.8),
-            borderRadius: BorderRadius.circular(20),
+            color: AppColors.surfaceElevated,
+            borderRadius: BorderRadius.circular(14),
             border: Border.all(color: AppColors.surfaceBorder),
           ),
           child: Text(
             widget.category.toUpperCase(),
             style: AppTextStyles.labelCaps.copyWith(
               color: AppColors.textSecondary,
-              fontSize: 11,
-            ),
-          ),
-        ),
-        const SizedBox(height: 24),
-
-        // Role badge
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-          decoration: BoxDecoration(
-            color: roleColor.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(30),
-            border: Border.all(color: roleColor.withOpacity(0.5)),
-          ),
-          child: Text(
-            widget.roleTitle.toUpperCase(),
-            style: AppTextStyles.titleSmall.copyWith(
-              color: roleGlow,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 2.5,
+              fontSize: 10,
+              letterSpacing: 2.0,
             ),
           ),
         ),
         const SizedBox(height: 28),
 
-        // Secret Word with character emergence
+        // Role title banner
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 8),
           decoration: BoxDecoration(
-            color: AppColors.surface.withOpacity(0.9),
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: roleColor.withOpacity(0.35)),
-            boxShadow: [
-              BoxShadow(
-                color: roleColor.withOpacity(0.2),
-                blurRadius: 40,
-                spreadRadius: 2,
-              ),
-            ],
+            color: widget.isImposter
+                ? AppColors.imposterVelvet
+                : AppColors.surfaceElevated,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: widget.isImposter ? AppColors.imposter : AppColors.goldMuted,
+              width: 1.5,
+            ),
           ),
           child: Text(
-            partialWord.isEmpty ? ' ' : partialWord,
-            textAlign: TextAlign.center,
-            style: AppTextStyles.secretWord.copyWith(
-              color: AppColors.textPrimary,
-              shadows: [
-                Shadow(
-                  color: roleGlow.withOpacity(0.6),
-                  blurRadius: 18,
-                ),
-              ],
+            widget.roleTitle.toUpperCase(),
+            style: AppTextStyles.titleSmall.copyWith(
+              color: themeGlow,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 3.5,
             ),
           ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 32),
 
-        // Role Subtitle / Instructions
-        Text(
-          widget.roleSubtitle,
-          textAlign: TextAlign.center,
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.textSecondary,
-            height: 1.4,
+        // Word Card
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: widget.isImposter
+                  ? AppColors.imposter.withOpacity(0.5)
+                  : AppColors.gold.withOpacity(0.4),
+              width: 1.5,
+            ),
+          ),
+          child: Column(
+            children: [
+              Text(
+                'YOUR SECRET WORD',
+                style: AppTextStyles.labelCaps.copyWith(
+                  fontSize: 10,
+                  color: AppColors.textMuted,
+                  letterSpacing: 2.5,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                partialWord.isEmpty ? ' ' : partialWord,
+                textAlign: TextAlign.center,
+                style: AppTextStyles.secretWord.copyWith(
+                  color: AppColors.textPrimary,
+                  fontSize: 34,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // Role Briefing
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Text(
+            widget.roleSubtitle,
+            textAlign: TextAlign.center,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.textSecondary,
+              height: 1.5,
+            ),
           ),
         ),
       ],

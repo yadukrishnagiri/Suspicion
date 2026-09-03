@@ -23,46 +23,37 @@ class PlayerTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final isEliminated = player.isEliminated;
 
-    final child = AnimatedContainer(
+    final tileContent = AnimatedContainer(
       duration: MotionConstants.boardStateDuration,
       curve: Curves.easeInOut,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
         color: isEliminated
-            ? AppColors.surface.withOpacity(0.4)
+            ? const Color(0xFF0F1014)
             : AppColors.surfaceElevated,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: isEliminated
-              ? AppColors.surfaceBorderSubtle
+              ? const Color(0xFF1C1F28)
               : (isStarter ? AppColors.gold.withOpacity(0.5) : AppColors.surfaceBorder),
           width: isStarter && !isEliminated ? 1.5 : 1.0,
         ),
-        boxShadow: isEliminated
-            ? []
-            : [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
       ),
       child: Row(
         children: [
-          // Avatar circle with person initial
+          // Avatar Initial Circle
           Container(
-            width: 48,
-            height: 48,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: isEliminated
-                  ? AppColors.surfaceBorderSubtle
-                  : (isStarter ? AppColors.gold.withOpacity(0.15) : AppColors.surfaceBorder),
+                  ? const Color(0xFF171A22)
+                  : (isStarter ? AppColors.gold.withOpacity(0.15) : AppColors.surfaceBorderSubtle),
               border: Border.all(
                 color: isEliminated
-                    ? AppColors.textMuted.withOpacity(0.2)
-                    : (isStarter ? AppColors.gold : AppColors.accentGlow.withOpacity(0.4)),
+                    ? Colors.transparent
+                    : (isStarter ? AppColors.gold : AppColors.surfaceBorder),
               ),
             ),
             child: Center(
@@ -70,15 +61,15 @@ class PlayerTile extends StatelessWidget {
                 player.name.isNotEmpty ? player.name[0].toUpperCase() : '?',
                 style: AppTextStyles.titleMedium.copyWith(
                   color: isEliminated
-                      ? AppColors.textMuted
-                      : (isStarter ? AppColors.gold : AppColors.textPrimary),
+                      ? AppColors.textMuted.withOpacity(0.5)
+                      : (isStarter ? AppColors.goldLight : AppColors.textPrimary),
                 ),
               ),
             ),
           ),
           const SizedBox(width: 16),
 
-          // Player name and starter badge
+          // Player Name & Status
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -87,14 +78,15 @@ class PlayerTile extends StatelessWidget {
                 Text(
                   player.name,
                   style: AppTextStyles.titleSmall.copyWith(
+                    fontSize: 16,
                     color: isEliminated ? AppColors.textMuted : AppColors.textPrimary,
                     decoration: isEliminated ? TextDecoration.lineThrough : null,
                   ),
                 ),
                 if (isStarter && !isEliminated) ...[
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 3),
                   Text(
-                    'FIRST SPEAKER',
+                    'FIRST TO SPEAK',
                     style: AppTextStyles.labelCaps.copyWith(
                       color: AppColors.gold,
                       fontSize: 10,
@@ -106,19 +98,21 @@ class PlayerTile extends StatelessWidget {
             ),
           ),
 
-          // Action: Eliminate or Eliminated tag
+          // Action: Either "ELIMINATED" badge OR "ELIMINATE" button
           if (isEliminated)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
-                color: AppColors.surfaceBorderSubtle,
-                borderRadius: BorderRadius.circular(12),
+                color: const Color(0xFF171922),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFF222634)),
               ),
               child: Text(
-                'OUT',
+                'ELIMINATED',
                 style: AppTextStyles.labelCaps.copyWith(
-                  color: AppColors.textMuted,
+                  color: AppColors.textMuted.withOpacity(0.7),
                   fontSize: 10,
+                  letterSpacing: 1.0,
                 ),
               ),
             )
@@ -126,32 +120,23 @@ class PlayerTile extends StatelessWidget {
             SpringButton(
               onTap: onEliminateTap,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
                 decoration: BoxDecoration(
-                  color: AppColors.imposter.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(14),
+                  color: AppColors.imposterVelvet,
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: AppColors.imposter.withOpacity(0.35),
+                    color: AppColors.imposter.withOpacity(0.6),
+                    width: 1.0,
                   ),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.cancel_outlined,
-                      size: 16,
-                      color: AppColors.imposterGlow,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'ELIMINATE',
-                      style: AppTextStyles.labelCaps.copyWith(
-                        color: AppColors.imposterGlow,
-                        fontSize: 11,
-                        letterSpacing: 1.0,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  'ELIMINATE',
+                  style: AppTextStyles.labelCaps.copyWith(
+                    color: AppColors.imposterGlow,
+                    fontSize: 11,
+                    letterSpacing: 1.5,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
             ),
@@ -159,14 +144,13 @@ class PlayerTile extends StatelessWidget {
       ),
     );
 
-    // People-board specs:
-    // Eliminated: 100% opacity -> 35%, 100% saturation -> 0%, Scale 1.0 -> 0.97
+    // If eliminated: desaturate completely, set to 30% opacity, scale to 0.97
     return AnimatedScale(
       scale: isEliminated ? 0.97 : 1.0,
       duration: MotionConstants.boardStateDuration,
       curve: Curves.easeInOut,
       child: AnimatedOpacity(
-        opacity: isEliminated ? 0.35 : 1.0,
+        opacity: isEliminated ? 0.30 : 1.0,
         duration: MotionConstants.boardStateDuration,
         child: isEliminated
             ? ColorFiltered(
@@ -174,9 +158,9 @@ class PlayerTile extends StatelessWidget {
                   Colors.grey,
                   BlendMode.saturation,
                 ),
-                child: child,
+                child: tileContent,
               )
-            : child,
+            : tileContent,
       ),
     );
   }

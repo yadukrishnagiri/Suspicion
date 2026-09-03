@@ -19,76 +19,69 @@ class ProfileScreen extends ConsumerWidget {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'PROFILE & STORAGE',
-          style: AppTextStyles.labelCaps.copyWith(color: AppColors.textPrimary),
+          'Profile & Saved Names',
+          style: AppTextStyles.titleMedium,
         ),
       ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(20),
           children: [
             // User Card
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppColors.surfaceElevated,
-                borderRadius: BorderRadius.circular(24),
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: AppColors.surfaceBorder),
               ),
               child: Column(
                 children: [
                   Container(
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
+                    width: 56,
+                    height: 56,
+                    decoration: const BoxDecoration(
                       shape: BoxShape.circle,
-                      color: AppColors.surfaceBorder,
-                      border: Border.all(color: AppColors.accent, width: 2),
+                      color: AppColors.surfaceElevated,
                     ),
-                    child: Center(
-                      child: Text(
-                        profile.displayName.isNotEmpty ? profile.displayName[0].toUpperCase() : 'P',
-                        style: AppTextStyles.heroDisplay.copyWith(fontSize: 32),
-                      ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      profile.displayName.isNotEmpty ? profile.displayName[0].toUpperCase() : 'P',
+                      style: AppTextStyles.titleLarge.copyWith(color: AppColors.accent),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   Text(
                     profile.displayName,
                     style: AppTextStyles.titleMedium,
                   ),
                   if (profile.email.isNotEmpty) ...[
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
                       profile.email,
-                      style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textMuted),
+                      style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textMuted, fontSize: 13),
                     ),
                   ],
                   const SizedBox(height: 12),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: isGuest
-                          ? AppColors.surfaceBorderSubtle
-                          : AppColors.emerald.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isGuest ? AppColors.surfaceBorder : AppColors.emerald.withOpacity(0.4),
-                      ),
+                      color: AppColors.surfaceElevated,
+                      borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      isGuest ? 'LOCAL GUEST (OFFLINE)' : 'SYNCED WITH CLOUD FIRESTORE',
+                      isGuest ? 'Offline Guest Mode' : 'Connected to Firestore',
                       style: AppTextStyles.labelCaps.copyWith(
-                        fontSize: 9,
+                        fontSize: 10,
                         color: isGuest ? AppColors.textMuted : AppColors.emerald,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
 
                   if (isGuest)
                     SpringButton(
@@ -97,26 +90,16 @@ class ProfileScreen extends ConsumerWidget {
                         ref.read(authProvider.notifier).signInWithGoogle();
                       },
                       child: Container(
-                        height: 50,
+                        height: 44,
                         decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(16),
+                          color: AppColors.surfaceElevated,
+                          borderRadius: BorderRadius.circular(10),
                           border: Border.all(color: AppColors.surfaceBorder),
                         ),
                         alignment: Alignment.center,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.login_rounded, size: 18, color: AppColors.textPrimary),
-                            const SizedBox(width: 8),
-                            Text(
-                              'SIGN IN WITH GOOGLE',
-                              style: AppTextStyles.labelCaps.copyWith(
-                                color: AppColors.textPrimary,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
+                        child: Text(
+                          'Sign in with Google',
+                          style: AppTextStyles.titleSmall.copyWith(fontSize: 13),
                         ),
                       ),
                     )
@@ -127,19 +110,15 @@ class ProfileScreen extends ConsumerWidget {
                         ref.read(authProvider.notifier).signOut();
                       },
                       child: Container(
-                        height: 46,
+                        height: 40,
                         decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.surfaceBorder),
+                          color: AppColors.surfaceElevated,
+                          borderRadius: BorderRadius.circular(10),
                         ),
                         alignment: Alignment.center,
                         child: Text(
-                          'SIGN OUT',
-                          style: AppTextStyles.labelCaps.copyWith(
-                            color: AppColors.imposterGlow,
-                            fontSize: 11,
-                          ),
+                          'Sign Out',
+                          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.imposter),
                         ),
                       ),
                     ),
@@ -152,43 +131,19 @@ class ProfileScreen extends ConsumerWidget {
               Text(
                 authState.errorMessage!,
                 textAlign: TextAlign.center,
-                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.imposterGlow),
+                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.imposter),
               ),
             ],
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 28),
 
-            // Privacy & Architecture disclosure
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceBorderSubtle,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: AppColors.surfaceBorder),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.shield_outlined, color: AppColors.accentGlow, size: 22),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Text(
-                      'Zero gameplay data or voting history is stored. Only your profile and recent names for auto-complete are saved.',
-                      style: AppTextStyles.bodyMedium.copyWith(fontSize: 12),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 32),
-
-            // Recent Player Names Section
+            // Saved Players Section
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'RECENT PLAYER NAMES (${profile.recentPlayerNames.length})',
-                  style: AppTextStyles.labelCaps.copyWith(color: AppColors.textSecondary),
+                  'SAVED PLAYERS (${profile.recentPlayerNames.length})',
+                  style: AppTextStyles.labelCaps,
                 ),
                 if (profile.recentPlayerNames.isNotEmpty)
                   TextButton(
@@ -197,23 +152,20 @@ class ProfileScreen extends ConsumerWidget {
                       ref.read(authProvider.notifier).clearRecentNames();
                     },
                     child: Text(
-                      'CLEAR ALL',
-                      style: AppTextStyles.labelCaps.copyWith(
-                        color: AppColors.imposterGlow,
-                        fontSize: 11,
-                      ),
+                      'Clear All',
+                      style: AppTextStyles.labelCaps.copyWith(color: AppColors.imposter),
                     ),
                   ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
 
             if (profile.recentPlayerNames.isEmpty)
               Container(
-                padding: const EdgeInsets.symmetric(vertical: 32),
+                padding: const EdgeInsets.symmetric(vertical: 24),
                 alignment: Alignment.center,
                 child: Text(
-                  'No recent names saved yet.\nNames entered during setup will automatically appear here.',
+                  'No saved names yet.\nNames entered during game setup will appear here.',
                   textAlign: TextAlign.center,
                   style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textMuted),
                 ),
@@ -221,13 +173,13 @@ class ProfileScreen extends ConsumerWidget {
             else
               Wrap(
                 spacing: 8,
-                runSpacing: 10,
+                runSpacing: 8,
                 children: profile.recentPlayerNames.map((name) {
                   return Chip(
-                    backgroundColor: AppColors.surfaceElevated,
+                    backgroundColor: AppColors.surface,
                     side: const BorderSide(color: AppColors.surfaceBorder),
-                    label: Text(name, style: AppTextStyles.bodyMedium),
-                    deleteIcon: const Icon(Icons.close_rounded, size: 16),
+                    label: Text(name, style: AppTextStyles.bodyMedium.copyWith(fontSize: 13)),
+                    deleteIcon: const Icon(Icons.close_rounded, size: 14),
                     deleteIconColor: AppColors.textMuted,
                     onDeleted: () {
                       AppHaptics.selection();
@@ -236,6 +188,22 @@ class ProfileScreen extends ConsumerWidget {
                   );
                 }).toList(),
               ),
+
+            const SizedBox(height: 28),
+
+            // Privacy note
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.surfaceBorderSubtle),
+              ),
+              child: Text(
+                'Only player names are saved locally and in Firestore for fast autocomplete. No game or voting history is ever stored.',
+                style: AppTextStyles.bodyMedium.copyWith(fontSize: 12, color: AppColors.textMuted),
+              ),
+            ),
           ],
         ),
       ),

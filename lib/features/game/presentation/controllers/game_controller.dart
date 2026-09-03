@@ -104,8 +104,8 @@ class GameController extends StateNotifier<GameState> {
   }
 
   /// Confirm player elimination and evaluate win condition
-  void confirmElimination() {
-    final target = state.recentlyEliminatedPlayer;
+  void confirmElimination([Player? playerOverride]) {
+    final target = playerOverride ?? state.recentlyEliminatedPlayer;
     if (target == null) return;
 
     final updatedPlayers = state.players.map((p) {
@@ -134,6 +134,7 @@ class GameController extends StateNotifier<GameState> {
 
     state = state.copyWith(
       players: updatedPlayers,
+      recentlyEliminatedPlayer: target.copyWith(isEliminated: true),
       winner: winner,
       phase: nextPhase,
     );

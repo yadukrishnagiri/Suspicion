@@ -35,17 +35,17 @@ class _EliminationRevealWidgetState extends State<EliminationRevealWidget>
   void initState() {
     super.initState();
 
-    // 1. Tension pause controller (800ms)
+    // 1. Tension pause (800ms)
     _tensionController = AnimationController(
       vsync: this,
       duration: MotionConstants.eliminationPauseDuration,
     );
 
-    _pulseScale = Tween<double>(begin: 1.0, end: 1.15).animate(
+    _pulseScale = Tween<double>(begin: 1.0, end: 1.12).animate(
       CurvedAnimation(parent: _tensionController, curve: Curves.easeInOut),
     );
 
-    // 2. Reveal wave controller (600ms)
+    // 2. Reveal wave (600ms)
     _revealController = AnimationController(
       vsync: this,
       duration: MotionConstants.eliminationWaveDuration,
@@ -92,74 +92,72 @@ class _EliminationRevealWidgetState extends State<EliminationRevealWidget>
 
   @override
   Widget build(BuildContext context) {
-    final roleColor = widget.isImposter ? AppColors.imposter : AppColors.citizen;
-    final roleGlow = widget.isImposter ? AppColors.imposterGlow : AppColors.citizenGlow;
-    final roleTitle = widget.isImposter ? 'IMPOSTER FOUND' : 'INNOCENT CITIZEN';
+    final roleColor = widget.isImposter ? AppColors.imposter : AppColors.goldMuted;
+    final roleGlow = widget.isImposter ? AppColors.imposterGlow : AppColors.goldLight;
+    final roleTitle = widget.isImposter ? 'IMPOSTER UNMASKED' : 'INNOCENT CITIZEN';
     final roleSubtitle = widget.isImposter
         ? '${widget.playerName} was indeed an Imposter!'
-        : '${widget.playerName} was a Citizen.';
+        : '${widget.playerName} was a Citizen. The group eliminated an innocent.';
 
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 28, vertical: 40),
       child: AnimatedBuilder(
         animation: Listenable.merge([_tensionController, _revealController]),
         builder: (context, child) {
           return Container(
-            padding: const EdgeInsets.all(28),
+            padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
               color: AppColors.surface,
-              borderRadius: BorderRadius.circular(32),
+              borderRadius: BorderRadius.circular(28),
               border: Border.all(
                 color: _revealed
-                    ? roleColor.withOpacity(0.6)
+                    ? (widget.isImposter ? AppColors.imposter : AppColors.surfaceBorder)
                     : AppColors.surfaceBorder,
                 width: 1.5,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: _revealed
-                      ? roleColor.withOpacity(0.35)
-                      : Colors.black.withOpacity(0.5),
+                  color: _revealed && widget.isImposter
+                      ? AppColors.imposter.withOpacity(0.3)
+                      : Colors.black.withOpacity(0.6),
                   blurRadius: 40,
-                  spreadRadius: _revealed ? 5 : 0,
+                  spreadRadius: _revealed ? 2 : 0,
                 ),
               ],
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Header
                 Text(
-                  'ELIMINATION REVEAL',
+                  'VERDICT',
                   style: AppTextStyles.labelCaps.copyWith(
                     color: AppColors.textMuted,
-                    letterSpacing: 3.0,
+                    letterSpacing: 4.0,
                   ),
                 ),
                 const SizedBox(height: 28),
 
-                // Tension Pulse / Role Wave Circle
+                // Icon / Status circle
                 Transform.scale(
                   scale: _revealed ? 1.0 : _pulseScale.value,
                   child: Container(
-                    width: 120,
-                    height: 120,
+                    width: 100,
+                    height: 100,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: _revealed
-                          ? roleColor.withOpacity(0.18)
+                          ? (widget.isImposter ? AppColors.imposterVelvet : AppColors.surfaceElevated)
                           : AppColors.surfaceElevated,
                       border: Border.all(
                         color: _revealed ? roleColor : AppColors.surfaceBorder,
-                        width: 2.5,
+                        width: 2.0,
                       ),
                       boxShadow: _revealed
                           ? [
                               BoxShadow(
-                                color: roleColor.withOpacity(_waveProgress.value * 0.4),
-                                blurRadius: 35,
-                                spreadRadius: 6,
+                                color: roleColor.withOpacity(_waveProgress.value * 0.35),
+                                blurRadius: 30,
                               ),
                             ]
                           : [],
@@ -168,18 +166,18 @@ class _EliminationRevealWidgetState extends State<EliminationRevealWidget>
                       child: _revealed
                           ? Icon(
                               widget.isImposter
-                                  ? Icons.warning_amber_rounded
-                                  : Icons.shield_outlined,
-                              size: 56,
+                                  ? Icons.theater_comedy_rounded
+                                  : Icons.verified_user_outlined,
+                              size: 48,
                               color: roleGlow,
                             )
                           : const SizedBox(
-                              width: 32,
-                              height: 32,
+                              width: 28,
+                              height: 28,
                               child: CircularProgressIndicator(
-                                strokeWidth: 3,
+                                strokeWidth: 2.5,
                                 valueColor: AlwaysStoppedAnimation<Color>(
-                                  AppColors.textSecondary,
+                                  AppColors.goldLight,
                                 ),
                               ),
                             ),
@@ -191,11 +189,11 @@ class _EliminationRevealWidgetState extends State<EliminationRevealWidget>
                 // Player name
                 Text(
                   widget.playerName,
-                  style: AppTextStyles.titleLarge,
+                  style: AppTextStyles.titleLarge.copyWith(fontSize: 28),
                 ),
                 const SizedBox(height: 16),
 
-                // Role Reveal (Appears with wave)
+                // Revealed Verdict
                 if (_revealed) ...[
                   Opacity(
                     opacity: _resultOpacity.value,
@@ -207,16 +205,18 @@ class _EliminationRevealWidgetState extends State<EliminationRevealWidget>
                             vertical: 8,
                           ),
                           decoration: BoxDecoration(
-                            color: roleColor.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: roleColor.withOpacity(0.4)),
+                            color: widget.isImposter
+                                ? AppColors.imposter.withOpacity(0.2)
+                                : AppColors.surfaceElevated,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: roleColor.withOpacity(0.5)),
                           ),
                           child: Text(
                             roleTitle,
                             style: AppTextStyles.titleSmall.copyWith(
                               color: roleGlow,
                               fontWeight: FontWeight.w800,
-                              letterSpacing: 2.0,
+                              letterSpacing: 2.5,
                             ),
                           ),
                         ),
@@ -226,9 +226,10 @@ class _EliminationRevealWidgetState extends State<EliminationRevealWidget>
                           textAlign: TextAlign.center,
                           style: AppTextStyles.bodyMedium.copyWith(
                             color: AppColors.textSecondary,
+                            height: 1.5,
                           ),
                         ),
-                        const SizedBox(height: 28),
+                        const SizedBox(height: 32),
                         SpringButton(
                           onTap: widget.onDismiss,
                           child: Container(
@@ -236,13 +237,14 @@ class _EliminationRevealWidgetState extends State<EliminationRevealWidget>
                             width: double.infinity,
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
-                              color: AppColors.surfaceElevated,
-                              borderRadius: BorderRadius.circular(18),
-                              border: Border.all(color: AppColors.surfaceBorder),
+                              gradient: widget.isImposter ? AppColors.imposterGradient : AppColors.goldGradient,
+                              borderRadius: BorderRadius.circular(16),
                             ),
                             child: Text(
                               'CONTINUE',
-                              style: AppTextStyles.buttonText,
+                              style: AppTextStyles.buttonText.copyWith(
+                                color: widget.isImposter ? Colors.white : Colors.black,
+                              ),
                             ),
                           ),
                         ),
@@ -251,7 +253,7 @@ class _EliminationRevealWidgetState extends State<EliminationRevealWidget>
                   ),
                 ] else ...[
                   Text(
-                    'Determining identity...',
+                    'Revealing identity...',
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: AppColors.textMuted,
                       fontStyle: FontStyle.italic,

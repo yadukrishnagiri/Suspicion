@@ -3,39 +3,38 @@ import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 
 class AppTextStyles {
-  static TextStyle get heroDisplay => GoogleFonts.outfit(
-        fontSize: 42,
-        fontWeight: FontWeight.w900,
-        letterSpacing: 4.0,
+  static TextStyle get heroDisplay => GoogleFonts.plusJakartaSans(
+        fontSize: 38,
+        fontWeight: FontWeight.w800,
+        letterSpacing: -1.0,
         color: AppColors.textPrimary,
         height: 1.1,
       );
 
-  static TextStyle get titleLarge => GoogleFonts.outfit(
-        fontSize: 28,
-        fontWeight: FontWeight.w800,
-        letterSpacing: 1.2,
-        color: AppColors.textPrimary,
-      );
-
-  static TextStyle get titleMedium => GoogleFonts.outfit(
-        fontSize: 20,
+  static TextStyle get titleLarge => GoogleFonts.plusJakartaSans(
+        fontSize: 24,
         fontWeight: FontWeight.w700,
-        letterSpacing: 0.5,
+        letterSpacing: -0.5,
         color: AppColors.textPrimary,
       );
 
-  static TextStyle get titleSmall => GoogleFonts.outfit(
-        fontSize: 16,
+  static TextStyle get titleMedium => GoogleFonts.plusJakartaSans(
+        fontSize: 18,
         fontWeight: FontWeight.w600,
-        letterSpacing: 0.5,
+        letterSpacing: -0.2,
         color: AppColors.textPrimary,
       );
 
-  static TextStyle get secretWord => GoogleFonts.outfit(
-        fontSize: 38,
+  static TextStyle get titleSmall => GoogleFonts.plusJakartaSans(
+        fontSize: 15,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textPrimary,
+      );
+
+  static TextStyle get secretWord => GoogleFonts.plusJakartaSans(
+        fontSize: 34,
         fontWeight: FontWeight.w800,
-        letterSpacing: 3.0,
+        letterSpacing: -0.5,
         color: AppColors.textPrimary,
       );
 
@@ -55,15 +54,14 @@ class AppTextStyles {
 
   static TextStyle get labelCaps => GoogleFonts.inter(
         fontSize: 12,
-        fontWeight: FontWeight.w700,
-        letterSpacing: 2.0,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 1.0,
         color: AppColors.textMuted,
       );
 
-  static TextStyle get buttonText => GoogleFonts.outfit(
-        fontSize: 16,
+  static TextStyle get buttonText => GoogleFonts.plusJakartaSans(
+        fontSize: 15,
         fontWeight: FontWeight.w700,
-        letterSpacing: 1.2,
-        color: Colors.white,
+        color: Colors.black,
       );
 }

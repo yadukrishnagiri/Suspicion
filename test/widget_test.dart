@@ -22,7 +22,7 @@ void main() {
     GoogleFonts.config.allowRuntimeFetching = false;
   });
 
-  testWidgets('HomeScreen renders IMPOSTER title and START NEW GAME button', (WidgetTester tester) async {
+  testWidgets('HomeScreen renders IMPOSTER title and Start Game button', (WidgetTester tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -38,8 +38,8 @@ void main() {
     await tester.pump();
 
     expect(find.text('IMPOSTER'), findsOneWidget);
-    expect(find.text('START NEW GAME'), findsOneWidget);
-    expect(find.text('RULES & SKILL GUIDE'), findsOneWidget);
+    expect(find.text('Start Game'), findsOneWidget);
+    expect(find.text('How to Play & Rules'), findsOneWidget);
     expect(find.text('One phone. One group. One liar.'), findsOneWidget);
   });
 }

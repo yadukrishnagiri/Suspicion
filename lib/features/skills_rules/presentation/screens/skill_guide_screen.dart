@@ -30,24 +30,24 @@ class _SkillGuideScreenState extends State<SkillGuideScreen> with SingleTickerPr
       backgroundColor: AppColors.background,
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'RULES & SKILL GUIDE',
-          style: AppTextStyles.labelCaps.copyWith(color: AppColors.textPrimary),
+          'How to Play',
+          style: AppTextStyles.titleMedium,
         ),
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: AppColors.accent,
-          indicatorWeight: 3,
+          indicatorWeight: 2,
           labelColor: AppColors.textPrimary,
           unselectedLabelColor: AppColors.textMuted,
           labelStyle: AppTextStyles.titleSmall.copyWith(fontSize: 13),
           tabs: const [
-            Tab(text: 'CITIZEN'),
-            Tab(text: 'IMPOSTER'),
-            Tab(text: 'OFFICIAL RULES'),
+            Tab(text: 'Citizens'),
+            Tab(text: 'Imposters'),
+            Tab(text: 'Rules'),
           ],
         ),
       ),
@@ -64,237 +64,98 @@ class _SkillGuideScreenState extends State<SkillGuideScreen> with SingleTickerPr
 
   Widget _buildCitizenTab() {
     return ListView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       children: [
-        _buildSectionCard(
-          title: 'CITIZEN OBJECTIVE',
-          accentColor: AppColors.citizenGlow,
-          content: 'Eliminate all imposters before they equal or outnumber the innocent citizens.',
+        _buildCard(
+          title: 'Goal',
+          content: 'Figure out who doesn\'t know the secret word and eliminate them before they outnumber you.',
         ),
-        const SizedBox(height: 16),
-        _buildTipsCard(
-          title: 'HOW TO PLAY AS CITIZEN',
-          tips: [
-            'Be indirect — speak about how, when, or where the word is experienced.',
-            'Avoid direct definitions or obvious physical descriptions.',
-            'Never use synonyms that hand the imposter their clue on a silver platter.',
-            'Listen for hesitation or players repeating earlier talking points.',
-            'Watch for context mismatches in early rounds.',
-          ],
+        const SizedBox(height: 12),
+        _buildCard(
+          title: 'Tips for Citizens',
+          content: '• Give subtle clues about how or when the word is experienced.\n'
+              '• Avoid direct definitions or obvious physical descriptions.\n'
+              '• Listen for players who repeat someone else\'s idea or hesitate before speaking.\n'
+              '• Never use synonyms that give away the word.',
         ),
-        const SizedBox(height: 16),
-        _buildClueComparison(),
+        const SizedBox(height: 12),
+        _buildCard(
+          title: 'Example Clues (e.g. Word: Rain)',
+          content: 'Good: "I dislike walking my dog when this happens."\n'
+              'Bad: "Water falling from the sky."',
+        ),
       ],
     );
   }
 
   Widget _buildImposterTab() {
     return ListView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       children: [
-        _buildSectionCard(
-          title: 'IMPOSTER OBJECTIVE',
-          accentColor: AppColors.imposterGlow,
-          content: 'Survive the votes until active imposters are greater than or equal to active citizens.',
+        _buildCard(
+          title: 'Goal',
+          content: 'Blend in with the citizens and survive votes until active imposters equal or outnumber active citizens.',
         ),
-        const SizedBox(height: 16),
-        _buildTipsCard(
-          title: 'HOW TO PLAY AS IMPOSTER',
-          tips: [
-            'Listen before speaking — let citizens anchor the conversation first.',
-            'Follow themes and emotional tone, not exact words.',
-            'Talk about broad situations, memories, and personal experiences.',
-            'Stay adaptable and confident. Hesitation is the first giveaway.',
-            'In Blind mode, nod along and mirror the confidence of the room.',
-          ],
+        const SizedBox(height: 12),
+        _buildCard(
+          title: 'Tips for Imposters',
+          content: '• Listen carefully to the first few players before giving your clue.\n'
+              '• Follow general themes, moods, and relatable situations.\n'
+              '• Stay calm and confident. Hesitation is the easiest giveaway.\n'
+              '• In Blind mode, agree with broad sentiments and mirror the room.',
         ),
-        const SizedBox(height: 16),
-        _buildGoldenRuleCard(),
+        const SizedBox(height: 12),
+        _buildCard(
+          title: 'Golden Rule',
+          content: 'Help your side without revealing your identity.',
+        ),
       ],
     );
   }
 
   Widget _buildRulesTab() {
     return ListView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       children: [
-        _buildSectionCard(
-          title: 'SETUP LIMITS',
-          accentColor: AppColors.gold,
-          content: '• Maximum Players: 15\n• Maximum Imposters: 7\n• Minimum Players: (2 × Imposters) + 1\n• Category: One category chosen per game',
+        _buildCard(
+          title: 'Player Limits',
+          content: '• 3 to 15 Players allowed\n'
+              '• 1 to 7 Imposters allowed\n'
+              '• Minimum players formula: (2 × Imposters) + 1',
         ),
-        const SizedBox(height: 16),
-        _buildSectionCard(
-          title: 'DISCUSSION & VOTING',
-          accentColor: AppColors.textPrimary,
-          content: 'The app does not handle speaking order or count votes.\n\nPlayers talk freely, debate clues, and conduct in-person group votes. When someone is voted out, tap their tile on the People Board.',
+        const SizedBox(height: 12),
+        _buildCard(
+          title: 'Discussion & Voting',
+          content: '• The app does not manage voting or speaking order.\n'
+              '• Players talk openly in real life and vote by pointing or agreement.\n'
+              '• Tap "Eliminate" on the player who was voted out.',
         ),
-        const SizedBox(height: 16),
-        _buildSectionCard(
-          title: 'ELIMINATION SECRECY',
-          accentColor: AppColors.imposterGlow,
-          content: 'The app will ONLY reveal whether the eliminated participant was a Citizen or Imposter.\n\nSecret words and hints are NEVER revealed until the game has fully finished.',
-        ),
-        const SizedBox(height: 16),
-        _buildSectionCard(
-          title: 'WIN CONDITIONS',
-          accentColor: AppColors.emerald,
-          content: '• Citizens Win: All imposters have been eliminated.\n• Imposters Win: Active Imposters >= Active Citizens.',
+        const SizedBox(height: 12),
+        _buildCard(
+          title: 'Win Conditions',
+          content: '• Citizens Win: All imposters are eliminated.\n'
+              '• Imposters Win: Active Imposters >= Active Citizens.',
         ),
       ],
     );
   }
 
-  Widget _buildSectionCard({
-    required String title,
-    required Color accentColor,
-    required String content,
-  }) {
+  Widget _buildCard({required String title, required String content}) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.surfaceElevated,
-        borderRadius: BorderRadius.circular(22),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.surfaceBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: AppTextStyles.labelCaps.copyWith(
-              color: accentColor,
-              letterSpacing: 2.0,
-            ),
-          ),
-          const SizedBox(height: 12),
+          Text(title, style: AppTextStyles.titleSmall.copyWith(color: AppColors.accent)),
+          const SizedBox(height: 8),
           Text(
             content,
-            style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textPrimary, height: 1.5),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTipsCard({required String title, required List<String> tips}) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceElevated,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.surfaceBorder),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: AppTextStyles.labelCaps.copyWith(
-              color: AppColors.textSecondary,
-              letterSpacing: 2.0,
-            ),
-          ),
-          const SizedBox(height: 14),
-          ...tips.map((tip) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      margin: const EdgeInsets.only(top: 6),
-                      width: 6,
-                      height: 6,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.accent,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        tip,
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.textPrimary,
-                          height: 1.4,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              )),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildClueComparison() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceElevated,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.surfaceBorder),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'STRONG CLUES VS WEAK CLUES',
-            style: AppTextStyles.labelCaps.copyWith(color: AppColors.gold),
-          ),
-          const SizedBox(height: 14),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('STRONG (Contextual)', style: AppTextStyles.titleSmall.copyWith(color: AppColors.emerald, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    Text('• "Weekend ritual"\n• "Celebration mood"\n• "Travel companion"', style: AppTextStyles.bodyMedium),
-                  ],
-                ),
-              ),
-              Container(width: 1, height: 80, color: AppColors.surfaceBorder),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('WEAK (Obvious)', style: AppTextStyles.titleSmall.copyWith(color: AppColors.imposterGlow, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    Text('• Definitions\n• Exact colors/sizes\n• Synonyms', style: AppTextStyles.bodyMedium),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGoldenRuleCard() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.accent.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.accent.withOpacity(0.4)),
-      ),
-      child: Column(
-        children: [
-          Text(
-            'THE GOLDEN RULE',
-            style: AppTextStyles.labelCaps.copyWith(color: AppColors.accentGlow),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            '"Help your side without revealing the answer."',
-            textAlign: TextAlign.center,
-            style: AppTextStyles.titleMedium.copyWith(fontStyle: FontStyle.italic),
+            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textPrimary, height: 1.5),
           ),
         ],
       ),
