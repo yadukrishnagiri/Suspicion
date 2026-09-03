@@ -1,5 +1,10 @@
-import React, { useState } from 'react';
-import { View, Text, Modal } from 'react-native';
+import React from 'react';
+import { View, Text } from 'react-native';
+import Animated, {
+  FadeInDown,
+  LinearTransition,
+  useReducedMotion,
+} from 'react-native-reanimated';
 import { Player } from '@/types/game';
 import { PressableScale } from '@/components/common';
 
@@ -7,22 +12,29 @@ interface PlayerCardProps {
   player: Player;
   index: number;
   isDiscussionStarter: boolean;
-  onEliminate: (playerId: string) => void;
+  onVote: (player: Player) => void;
 }
 
 export const PlayerCardSwiss: React.FC<PlayerCardProps> = ({
   player,
   index,
   isDiscussionStarter,
-  onEliminate,
+  onVote,
 }) => {
-  const [showConfirm, setShowConfirm] = useState(false);
+  const reducedMotion = useReducedMotion();
 
   return (
-    <>
+    <Animated.View
+      entering={
+        reducedMotion
+          ? undefined
+          : FadeInDown.duration(200).delay(Math.min(index * 30, 250))
+      }
+      layout={reducedMotion ? undefined : LinearTransition.duration(200)}
+    >
       <PressableScale
         disabled={player.isEliminated}
-        onPress={() => !player.isEliminated && setShowConfirm(true)}
+        onPress={() => !player.isEliminated && onVote(player)}
         haptic="light"
         activeScale={0.98}
         accessibilityRole="button"
@@ -88,58 +100,6 @@ export const PlayerCardSwiss: React.FC<PlayerCardProps> = ({
           )}
         </View>
       </PressableScale>
-
-      {/* Swiss Confirmation Modal */}
-      <Modal
-        visible={showConfirm}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowConfirm(false)}
-      >
-        <View className="flex-1 bg-black/90 items-center justify-center p-6">
-          <View className="w-full max-w-sm bg-black border border-neutral-700 p-6">
-            <Text className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest font-bold">
-              CONFIRM VOTE
-            </Text>
-            <Text className="text-3xl font-black text-white mt-1 uppercase">
-              {player.name}
-            </Text>
-            <Text className="text-xs font-mono text-neutral-400 mt-2 uppercase tracking-wide">
-              VOTE OUT THIS PLAYER?
-            </Text>
-
-            <View className="flex-row gap-3 mt-6">
-              <PressableScale
-                onPress={() => setShowConfirm(false)}
-                haptic="light"
-                activeScale={0.96}
-                accessibilityRole="button"
-                accessibilityLabel="Cancel elimination"
-                className="flex-1 h-12 border border-neutral-700 items-center justify-center min-h-[48px]"
-              >
-                <Text className="text-xs font-mono font-bold text-neutral-400 uppercase">
-                  CANCEL
-                </Text>
-              </PressableScale>
-              <PressableScale
-                onPress={() => {
-                  setShowConfirm(false);
-                  onEliminate(player.id);
-                }}
-                haptic="warning"
-                activeScale={0.96}
-                accessibilityRole="button"
-                accessibilityLabel="Confirm elimination"
-                className="flex-1 h-12 bg-red-600 items-center justify-center min-h-[48px]"
-              >
-                <Text className="text-xs font-mono font-bold text-white uppercase">
-                  CONFIRM
-                </Text>
-              </PressableScale>
-            </View>
-          </View>
-        </View>
-      </Modal>
-    </>
+    </Animated.View>
   );
 };

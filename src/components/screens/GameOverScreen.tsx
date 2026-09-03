@@ -1,7 +1,15 @@
 import React from 'react';
 import { View, Text, ScrollView } from 'react-native';
+import Animated, {
+  FadeInDown,
+  Easing,
+  useReducedMotion,
+} from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useGameStore } from '@/store/gameStore';
 import { PressableScale } from '@/components/common';
+
+const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
 
 export const GameOverScreen: React.FC = () => {
   const {
@@ -13,13 +21,33 @@ export const GameOverScreen: React.FC = () => {
     backToSetup,
   } = useGameStore();
 
+  const insets = useSafeAreaInsets();
   const isCitizensWin = winner === 'citizens';
+  const reducedMotion = useReducedMotion();
 
   return (
-    <View className="flex-1 bg-black px-5 pt-6 pb-8 justify-between max-w-md w-full self-center">
-      <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
-        {/* Banner */}
-        <View className="items-center mt-6 border-b border-neutral-800 pb-6">
+    <View
+      style={{
+        flex: 1,
+        width: '100%',
+        height: '100%',
+        paddingBottom: Math.max(insets.bottom, 16),
+      }}
+      className="bg-black px-5 pt-6 justify-between max-w-md w-full self-center"
+    >
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 24 }}
+      >
+        {/* Banner with Climax Entrance */}
+        <Animated.View
+          entering={
+            reducedMotion
+              ? undefined
+              : FadeInDown.duration(250).easing(EASE_OUT)
+          }
+          className="items-center mt-6 border-b border-neutral-800 pb-6"
+        >
           <Text
             className={`text-xs font-mono font-bold uppercase tracking-widest ${
               isCitizensWin ? 'text-blue-400' : 'text-red-500'
@@ -37,11 +65,18 @@ export const GameOverScreen: React.FC = () => {
               ? 'All impostors identified and eliminated.'
               : 'Impostors achieved parity with active citizens.'}
           </Text>
-        </View>
+        </Animated.View>
 
-        {/* Post-Game Truth Reveal */}
+        {/* Post-Game Truth Reveal (Staggered) */}
         {activeWordEntry && (
-          <View className="mt-6 border border-neutral-800 bg-neutral-950 p-4">
+          <Animated.View
+            entering={
+              reducedMotion
+                ? undefined
+                : FadeInDown.duration(250).delay(80).easing(EASE_OUT)
+            }
+            className="mt-6 border border-neutral-800 bg-neutral-950 p-4"
+          >
             <Text className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest mb-3 font-bold">
               TRUTH REVEAL
             </Text>
@@ -77,18 +112,30 @@ export const GameOverScreen: React.FC = () => {
                 {activeWordEntry.category}
               </Text>
             </View>
-          </View>
+          </Animated.View>
         )}
 
-        {/* Players Roster */}
-        <View className="mt-6">
+        {/* Players Roster (Cascading Reveal) */}
+        <Animated.View
+          entering={
+            reducedMotion
+              ? undefined
+              : FadeInDown.duration(200).delay(150).easing(EASE_OUT)
+          }
+          className="mt-6"
+        >
           <Text className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest mb-2 font-bold">
             ROSTER IDENTITIES
           </Text>
           <View className="border border-neutral-800 divide-y divide-neutral-800 bg-neutral-950">
             {players.map((p, idx) => (
-              <View
+              <Animated.View
                 key={p.id}
+                entering={
+                  reducedMotion
+                    ? undefined
+                    : FadeInDown.duration(180).delay(180 + idx * 30)
+                }
                 className="flex-row items-center justify-between py-3 px-3"
               >
                 <View className="flex-row items-center gap-2">
@@ -104,13 +151,13 @@ export const GameOverScreen: React.FC = () => {
                 >
                   [{p.role === 'imposter' ? 'IMPOSTER' : 'CITIZEN'}]
                 </Text>
-              </View>
+              </Animated.View>
             ))}
           </View>
-        </View>
+        </Animated.View>
       </ScrollView>
 
-      {/* Persistence & New Game Actions */}
+      {/* Persistence & New Game Actions permanently docked */}
       <View className="gap-2.5 pt-4 border-t border-neutral-900">
         <PressableScale
           onPress={resetGameKeepSetup}

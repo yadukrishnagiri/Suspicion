@@ -6,12 +6,20 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Animated,
-  Easing,
 } from 'react-native';
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  LinearTransition,
+  Easing,
+  useReducedMotion,
+} from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useGameStore, CATEGORIES, getMaxImposters } from '@/store/gameStore';
 import { GameMode, GameCategory } from '@/types/game';
 import { PressableScale } from '@/components/common';
+
+const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
 
 const MODES: { id: GameMode; title: string; subtitle: string; label: string }[] = [
   {
@@ -38,10 +46,8 @@ export const SetupScreen: React.FC = () => {
   const [currentStep, setCurrentStep] = useState<'landing' | 'rules'>('landing');
   const [focusedInput, setFocusedInput] = useState<number | null>(null);
   const inputRefs = useRef<(TextInput | null)[]>([]);
-
-  // Animation values for step transition (180ms ease-out)
-  const fadeAnim = useRef(new Animated.Value(1)).current;
-  const slideAnim = useRef(new Animated.Value(0)).current;
+  const reducedMotion = useReducedMotion();
+  const insets = useSafeAreaInsets();
 
   const {
     playerCount,
@@ -60,71 +66,39 @@ export const SetupScreen: React.FC = () => {
   const maxImposters = getMaxImposters(playerCount);
   const isAtMaxImposters = imposterCount >= maxImposters;
 
-  const transitionToStep = (nextStep: 'landing' | 'rules') => {
-    const exitDirection = nextStep === 'rules' ? -12 : 12;
-    const enterDirection = nextStep === 'rules' ? 12 : -12;
-
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 70,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: exitDirection,
-        duration: 70,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      setCurrentStep(nextStep);
-      slideAnim.setValue(enterDirection);
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 110,
-          easing: Easing.bezier(0.23, 1, 0.32, 1),
-          useNativeDriver: true,
-        }),
-        Animated.timing(slideAnim, {
-          toValue: 0,
-          duration: 110,
-          easing: Easing.bezier(0.23, 1, 0.32, 1),
-          useNativeDriver: true,
-        }),
-      ]).start();
-    });
-  };
-
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      className="flex-1 bg-black"
-    >
-      <View className="flex-1 max-w-md w-full self-center justify-between">
-        <ScrollView
-          contentContainerStyle={{ paddingBottom: 100 }}
-          className="flex-1 px-5 pt-4"
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* Top Swiss Header */}
-          <View className="flex-row items-center justify-between pb-3 border-b border-neutral-800 mb-6">
-            <Text className="text-sm font-black tracking-widest text-white uppercase">
-              SUSPICION
-            </Text>
-            <Text className="text-xs font-mono text-neutral-500">
-              {currentStep === 'landing' ? '01 / ROSTER' : '02 / RULES'}
-            </Text>
-          </View>
-
-          <Animated.View
-            style={{
-              opacity: fadeAnim,
-              transform: [{ translateX: slideAnim }],
-            }}
+    <View style={{ flex: 1, width: '100%', height: '100%' }} className="bg-black">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
+      >
+        <View style={{ flex: 1 }} className="max-w-md w-full self-center justify-between">
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{ paddingBottom: 32 }}
+            className="px-5 pt-4"
+            keyboardShouldPersistTaps="handled"
           >
+            {/* Top Swiss Header */}
+            <View className="flex-row items-center justify-between pb-3 border-b border-neutral-800 mb-6">
+              <Text className="text-sm font-black tracking-widest text-white uppercase">
+                SUSPICION
+              </Text>
+              <Text className="text-xs font-mono text-neutral-500">
+                {currentStep === 'landing' ? '01 / ROSTER' : '02 / RULES'}
+              </Text>
+            </View>
+
             {currentStep === 'landing' ? (
               /* ================= PAGE 1: LANDING & ROSTER ================= */
-              <View>
+              <Animated.View
+                key="step-landing"
+                entering={
+                  reducedMotion
+                    ? undefined
+                    : FadeIn.duration(180).easing(EASE_OUT)
+                }
+              >
                 {/* Split Metric Counter Block */}
                 <View className="border border-neutral-800 divide-y divide-neutral-800 mb-6 bg-neutral-950">
                   <View className="flex-row divide-x divide-neutral-800">
@@ -241,12 +215,21 @@ export const SetupScreen: React.FC = () => {
                     </Text>
                   </View>
 
-                  <View className="border-t border-b border-neutral-800 divide-y divide-neutral-800 bg-neutral-950">
+                  <Animated.View
+                    layout={reducedMotion ? undefined : LinearTransition.duration(180)}
+                    className="border-t border-b border-neutral-800 divide-y divide-neutral-800 bg-neutral-950"
+                  >
                     {Array.from({ length: playerCount }).map((_, i) => {
                       const isFocused = focusedInput === i;
                       return (
-                        <View
+                        <Animated.View
                           key={i}
+                          entering={
+                            reducedMotion
+                              ? undefined
+                              : FadeInDown.duration(150).delay(Math.min(i * 20, 200))
+                          }
+                          layout={reducedMotion ? undefined : LinearTransition.duration(180)}
                           className={`flex-row items-center min-h-[48px] px-3 gap-3 ${
                             isFocused
                               ? 'bg-neutral-900 border-l-2 border-blue-500'
@@ -277,18 +260,25 @@ export const SetupScreen: React.FC = () => {
                             accessibilityLabel={`Player ${i + 1} name`}
                             className="flex-1 text-sm font-medium text-white outline-none py-2"
                           />
-                        </View>
+                        </Animated.View>
                       );
                     })}
-                  </View>
+                  </Animated.View>
                 </View>
-              </View>
+              </Animated.View>
             ) : (
               /* ================= PAGE 2: RULES & CATEGORY ================= */
-              <View>
+              <Animated.View
+                key="step-rules"
+                entering={
+                  reducedMotion
+                    ? undefined
+                    : FadeIn.duration(180).easing(EASE_OUT)
+                }
+              >
                 {/* Back to Players Link */}
                 <PressableScale
-                  onPress={() => transitionToStep('landing')}
+                  onPress={() => setCurrentStep('landing')}
                   haptic="light"
                   accessibilityRole="button"
                   accessibilityLabel="Back to roster"
@@ -427,42 +417,45 @@ export const SetupScreen: React.FC = () => {
                     })}
                   </View>
                 </View>
-              </View>
+              </Animated.View>
             )}
-          </Animated.View>
-        </ScrollView>
+          </ScrollView>
 
-        {/* Sticky Bottom Action Bar */}
-        <View className="px-5 py-3 border-t border-neutral-900 bg-black">
-          {currentStep === 'landing' ? (
-            <PressableScale
-              onPress={() => transitionToStep('rules')}
-              haptic="medium"
-              activeScale={0.98}
-              accessibilityRole="button"
-              accessibilityLabel="Proceed to game rules and category"
-              className="w-full h-14 bg-white items-center justify-center"
-            >
-              <Text className="text-xs font-black text-black uppercase tracking-widest">
-                GAME RULES & CATEGORY →
-              </Text>
-            </PressableScale>
-          ) : (
-            <PressableScale
-              onPress={startNewGame}
-              haptic="medium"
-              activeScale={0.98}
-              accessibilityRole="button"
-              accessibilityLabel="Start game and begin secret deal"
-              className="w-full h-14 bg-white items-center justify-center"
-            >
-              <Text className="text-xs font-black text-black uppercase tracking-widest">
-                START GAME →
-              </Text>
-            </PressableScale>
-          )}
+          {/* Sticky Bottom Action Bar with Safe Area Bottom Padding */}
+          <View
+            style={{ paddingBottom: Math.max(insets.bottom, 16) }}
+            className="px-5 pt-3 border-t border-neutral-900 bg-black"
+          >
+            {currentStep === 'landing' ? (
+              <PressableScale
+                onPress={() => setCurrentStep('rules')}
+                haptic="medium"
+                activeScale={0.98}
+                accessibilityRole="button"
+                accessibilityLabel="Proceed to game rules and category"
+                className="w-full h-14 bg-white items-center justify-center"
+              >
+                <Text className="text-xs font-black text-black uppercase tracking-widest">
+                  GAME RULES & CATEGORY →
+                </Text>
+              </PressableScale>
+            ) : (
+              <PressableScale
+                onPress={startNewGame}
+                haptic="medium"
+                activeScale={0.98}
+                accessibilityRole="button"
+                accessibilityLabel="Start game and begin secret deal"
+                className="w-full h-14 bg-white items-center justify-center"
+              >
+                <Text className="text-xs font-black text-black uppercase tracking-widest">
+                  START GAME →
+                </Text>
+              </PressableScale>
+            )}
+          </View>
         </View>
-      </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </View>
   );
 };

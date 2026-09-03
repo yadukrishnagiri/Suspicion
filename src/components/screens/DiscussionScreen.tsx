@@ -1,8 +1,20 @@
-import React, { useEffect } from 'react';
-import { View, Text, ScrollView, Modal } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  ZoomIn,
+  LinearTransition,
+  Easing,
+  useReducedMotion,
+} from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useGameStore } from '@/store/gameStore';
+import { Player } from '@/types/game';
 import { PlayerCardSwiss } from '@/components/PlayerCardSwiss';
 import { PressableScale, triggerHaptic } from '@/components/common';
+
+const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
 
 export const DiscussionScreen: React.FC = () => {
   const {
@@ -13,6 +25,10 @@ export const DiscussionScreen: React.FC = () => {
     eliminatePlayer,
     backToSetup,
   } = useGameStore();
+
+  const insets = useSafeAreaInsets();
+  const reducedMotion = useReducedMotion();
+  const [confirmPlayer, setConfirmPlayer] = useState<Player | null>(null);
 
   const activeCitizens = players.filter((p) => !p.isEliminated && p.role === 'citizen').length;
   const activeImposters = players.filter((p) => !p.isEliminated && p.role === 'imposter').length;
@@ -31,10 +47,11 @@ export const DiscussionScreen: React.FC = () => {
   }, [lastEliminatedPlayer]);
 
   return (
-    <View className="flex-1 bg-black">
+    <View style={{ flex: 1, width: '100%', height: '100%', position: 'relative' }} className="bg-black">
       <ScrollView
-        contentContainerStyle={{ paddingBottom: 40 }}
-        className="flex-1 px-5 pt-4 max-w-md w-full self-center"
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: Math.max(insets.bottom + 24, 40) }}
+        className="px-5 pt-4 max-w-md w-full self-center"
       >
         {/* Top Header Bar */}
         <View className="flex-row items-center justify-between pb-3 border-b border-neutral-800 mb-5">
@@ -63,7 +80,10 @@ export const DiscussionScreen: React.FC = () => {
         </View>
 
         {/* Discussion Starter Callout */}
-        <View className="border border-blue-500 bg-neutral-950 p-4 mb-6">
+        <Animated.View
+          entering={reducedMotion ? undefined : FadeInDown.duration(200).easing(EASE_OUT)}
+          className="border border-blue-500 bg-neutral-950 p-4 mb-6"
+        >
           <View className="flex-row items-center justify-between">
             <Text className="text-[10px] font-mono text-blue-400 uppercase tracking-widest font-bold">
               FIRST TO SPEAK
@@ -73,7 +93,7 @@ export const DiscussionScreen: React.FC = () => {
           <Text className="text-2xl font-black text-white mt-1 uppercase tracking-tight">
             {starter?.name ?? 'Player'}
           </Text>
-        </View>
+        </Animated.View>
 
         {/* Player Cards List in Entered Order */}
         <View className="mb-4">
@@ -86,49 +106,138 @@ export const DiscussionScreen: React.FC = () => {
             </Text>
           </View>
 
-          {players.map((p, idx) => (
-            <PlayerCardSwiss
-              key={p.id}
-              player={p}
-              index={idx}
-              isDiscussionStarter={p.id === discussionStarterId}
-              onEliminate={eliminatePlayer}
-            />
-          ))}
+          <Animated.View
+            layout={reducedMotion ? undefined : LinearTransition.duration(200)}
+          >
+            {players.map((p, idx) => (
+              <PlayerCardSwiss
+                key={p.id}
+                player={p}
+                index={idx}
+                isDiscussionStarter={p.id === discussionStarterId}
+                onVote={(selected) => setConfirmPlayer(selected)}
+              />
+            ))}
+          </Animated.View>
         </View>
       </ScrollView>
 
-      {/* Role Reveal Modal on Elimination */}
-      <Modal
-        visible={!!lastEliminatedPlayer}
-        transparent
-        animationType="fade"
-        onRequestClose={clearLastEliminated}
-      >
-        <View className="flex-1 bg-black/90 items-center justify-center p-6">
-          <View className="w-full max-w-sm bg-black border border-neutral-700 p-6 items-center">
+      {/* Confirmation Overlay (Solid, Centered, Zero Bleed) */}
+      {confirmPlayer && (
+        <Animated.View
+          entering={FadeIn.duration(150)}
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 9998,
+              backgroundColor: 'rgba(0, 0, 0, 0.95)',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: 24,
+            },
+          ]}
+        >
+          <Animated.View
+            entering={reducedMotion ? undefined : ZoomIn.duration(180).easing(EASE_OUT)}
+            style={{ maxWidth: 380, width: '100%' }}
+            className="bg-neutral-950 border border-neutral-700 p-6 shadow-2xl"
+          >
+            <Text className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest font-bold">
+              CONFIRM VOTE
+            </Text>
+            <Text className="text-3xl font-black text-white mt-1 uppercase tracking-tight">
+              {confirmPlayer.name}
+            </Text>
+            <Text className="text-xs font-mono text-neutral-400 mt-2 uppercase tracking-wide">
+              VOTE OUT THIS PLAYER?
+            </Text>
+
+            <View className="flex-row gap-3 mt-6">
+              <PressableScale
+                onPress={() => setConfirmPlayer(null)}
+                haptic="light"
+                activeScale={0.96}
+                accessibilityRole="button"
+                accessibilityLabel="Cancel elimination"
+                className="flex-1 h-12 border border-neutral-700 items-center justify-center min-h-[48px]"
+              >
+                <Text className="text-xs font-mono font-bold text-neutral-400 uppercase">
+                  CANCEL
+                </Text>
+              </PressableScale>
+              <PressableScale
+                onPress={() => {
+                  const targetId = confirmPlayer.id;
+                  setConfirmPlayer(null);
+                  eliminatePlayer(targetId);
+                }}
+                haptic="warning"
+                activeScale={0.96}
+                accessibilityRole="button"
+                accessibilityLabel="Confirm elimination"
+                className="flex-1 h-12 bg-red-600 items-center justify-center min-h-[48px]"
+              >
+                <Text className="text-xs font-mono font-bold text-white uppercase">
+                  CONFIRM
+                </Text>
+              </PressableScale>
+            </View>
+          </Animated.View>
+        </Animated.View>
+      )}
+
+      {/* Role Reveal Verdict Overlay (Solid, Centered, Zero Bleed) */}
+      {lastEliminatedPlayer && (
+        <Animated.View
+          entering={FadeIn.duration(150)}
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 9999,
+              backgroundColor: 'rgba(0, 0, 0, 0.95)',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: 24,
+            },
+          ]}
+        >
+          <Animated.View
+            entering={reducedMotion ? undefined : ZoomIn.duration(200).easing(EASE_OUT)}
+            style={{ maxWidth: 380, width: '100%' }}
+            className="bg-neutral-950 border border-neutral-700 p-6 items-center shadow-2xl"
+          >
             <Text className="text-[10px] font-mono uppercase tracking-widest text-neutral-500 font-bold">
               VERDICT
             </Text>
-            <Text className="text-3xl font-black text-white mt-1 text-center uppercase">
-              {lastEliminatedPlayer?.name}
+            <Text className="text-3xl font-black text-white mt-1 text-center uppercase tracking-tight">
+              {lastEliminatedPlayer.name}
             </Text>
 
             <View
               className={`mt-4 w-full py-4 items-center border ${
-                lastEliminatedPlayer?.role === 'imposter'
+                lastEliminatedPlayer.role === 'imposter'
                   ? 'border-red-500 bg-red-950/30'
                   : 'border-neutral-700 bg-neutral-900'
               }`}
             >
               <Text
                 className={`text-lg font-black font-mono uppercase tracking-widest text-center ${
-                  lastEliminatedPlayer?.role === 'imposter'
+                  lastEliminatedPlayer.role === 'imposter'
                     ? 'text-red-500'
                     : 'text-neutral-300'
                 }`}
               >
-                {lastEliminatedPlayer?.role === 'imposter'
+                {lastEliminatedPlayer.role === 'imposter'
                   ? 'IMPOSTER FOUND'
                   : 'NOT THE IMPOSTER'}
               </Text>
@@ -146,9 +255,9 @@ export const DiscussionScreen: React.FC = () => {
                 CONTINUE ROUND →
               </Text>
             </PressableScale>
-          </View>
-        </View>
-      </Modal>
+          </Animated.View>
+        </Animated.View>
+      )}
     </View>
   );
 };

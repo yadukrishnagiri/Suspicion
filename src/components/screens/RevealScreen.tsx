@@ -1,7 +1,19 @@
-import React, { useState } from 'react';
-import { View, Text } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Pressable } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  interpolate,
+  Easing,
+  useReducedMotion,
+} from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useGameStore } from '@/store/gameStore';
 import { PressableScale, triggerHaptic } from '@/components/common';
+
+const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
 
 export const RevealScreen: React.FC = () => {
   const {
@@ -12,25 +24,77 @@ export const RevealScreen: React.FC = () => {
     finishRevealAndStartDiscussion,
   } = useGameStore();
 
-  const [isRevealed, setIsRevealed] = useState(false);
+  const insets = useSafeAreaInsets();
+  const [hasInspected, setHasInspected] = useState(false);
+  const [isHolding, setIsHolding] = useState(false);
 
   const currentPlayer = players[currentRevealIndex];
   const isLastPlayer = currentRevealIndex >= players.length - 1;
+  const isImposter = currentPlayer?.role === 'imposter';
+
+  const reducedMotion = useReducedMotion();
+
+  // Reveal spring: 0 = hidden, 1 = revealed
+  const revealProgress = useSharedValue(0);
+
+  // Animated progress bar
+  const progressWidth = useSharedValue(
+    ((currentRevealIndex + 1) / (players.length || 1)) * 100
+  );
+
+  useEffect(() => {
+    progressWidth.set(
+      withTiming(((currentRevealIndex + 1) / (players.length || 1)) * 100, {
+        duration: 200,
+        easing: EASE_OUT,
+      })
+    );
+  }, [currentRevealIndex, players.length]);
+
+  // Reset inspection state when switching players
+  useEffect(() => {
+    setHasInspected(false);
+    setIsHolding(false);
+    revealProgress.set(0);
+  }, [currentRevealIndex]);
 
   if (!currentPlayer) return null;
 
-  const handleReveal = () => {
+  const handlePressIn = () => {
+    setIsHolding(true);
+    setHasInspected(true);
     triggerHaptic('medium');
-    setIsRevealed(true);
+
+    if (reducedMotion) {
+      revealProgress.set(1);
+    } else {
+      revealProgress.set(
+        withSpring(1, {
+          duration: 180,
+          dampingRatio: 0.85,
+        })
+      );
+    }
   };
 
-  const handleHide = () => {
+  const handlePressOut = () => {
+    setIsHolding(false);
     triggerHaptic('light');
-    setIsRevealed(false);
+
+    if (reducedMotion) {
+      revealProgress.set(0);
+    } else {
+      // Instant snap-shut to prevent peeking
+      revealProgress.set(
+        withSpring(0, {
+          duration: 120,
+          dampingRatio: 1,
+        })
+      );
+    }
   };
 
   const handleNext = () => {
-    setIsRevealed(false);
     if (isLastPlayer) {
       finishRevealAndStartDiscussion();
     } else {
@@ -38,28 +102,57 @@ export const RevealScreen: React.FC = () => {
     }
   };
 
-  const isImposter = currentPlayer.role === 'imposter';
+  // UI-thread animated styles
+  const coverAnimatedStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(revealProgress.get(), [0, 0.4], [1, 0]);
+    const scale = interpolate(revealProgress.get(), [0, 1], [1, 0.98]);
+    return {
+      opacity,
+      transform: [{ scale }],
+      pointerEvents: revealProgress.get() > 0.5 ? 'none' : 'auto',
+    };
+  });
+
+  const secretAnimatedStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(revealProgress.get(), [0.3, 1], [0, 1]);
+    const scale = interpolate(revealProgress.get(), [0, 1], [0.98, 1]);
+    return {
+      opacity,
+      transform: [{ scale }],
+    };
+  });
+
+  const progressBarAnimatedStyle = useAnimatedStyle(() => ({
+    width: `${progressWidth.get()}%`,
+  }));
 
   return (
-    <View className="flex-1 bg-black px-5 pt-6 justify-between pb-8 max-w-md w-full self-center">
-      {/* Top Header & Progress */}
+    <View
+      style={{
+        flex: 1,
+        width: '100%',
+        height: '100%',
+        paddingBottom: Math.max(insets.bottom, 16),
+      }}
+      className="bg-black px-5 pt-6 justify-between max-w-md w-full self-center"
+    >
+      {/* Top Header & Animated Progress */}
       <View>
         <View className="flex-row items-center justify-between pb-3 border-b border-neutral-800 mb-3">
           <Text className="text-sm font-black tracking-widest text-white uppercase">
             SUSPICION
           </Text>
           <Text className="text-xs font-mono text-neutral-500">
-            {String(currentRevealIndex + 1).padStart(2, '0')} / {String(players.length).padStart(2, '0')}
+            {String(currentRevealIndex + 1).padStart(2, '0')} /{' '}
+            {String(players.length).padStart(2, '0')}
           </Text>
         </View>
 
         {/* Hairline Progress Bar */}
         <View className="w-full h-1 bg-neutral-900 overflow-hidden">
-          <View
+          <Animated.View
             className="h-full bg-blue-500"
-            style={{
-              width: `${((currentRevealIndex + 1) / players.length) * 100}%`,
-            }}
+            style={progressBarAnimatedStyle}
           />
         </View>
       </View>
@@ -73,32 +166,24 @@ export const RevealScreen: React.FC = () => {
           {currentPlayer.name}
         </Text>
 
-        {/* Secret Card */}
-        <View className="w-full mt-8">
-          {!isRevealed ? (
-            <PressableScale
-              onPress={handleReveal}
-              haptic="none"
-              activeScale={0.96}
-              accessibilityRole="button"
-              accessibilityLabel={`Reveal secret assignment for ${currentPlayer.name}`}
-              className="w-full h-64 border border-neutral-800 bg-neutral-950 items-center justify-center p-6"
-            >
-              <Text className="text-xs font-mono uppercase text-neutral-500 tracking-widest font-bold mb-3">
-                [ PRIVATE CARD ]
-              </Text>
-              <Text className="text-lg font-black text-white tracking-wider">
-                TAP TO REVEAL
-              </Text>
-            </PressableScale>
-          ) : (
-            <View
-              className={`w-full h-64 border items-center justify-center p-6 bg-neutral-950 ${
+        {/* Option B: Hold-to-Reveal Card (Strictly Bounded) */}
+        <View className="w-full mt-8 h-64 relative overflow-hidden">
+          <Pressable
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
+            accessibilityRole="button"
+            accessibilityLabel={`Hold to peek role for ${currentPlayer.name}. Release to conceal.`}
+            className="w-full h-full"
+          >
+            {/* Secret Content Layer (Visible only while finger is down) */}
+            <Animated.View
+              style={secretAnimatedStyle}
+              className={`absolute inset-0 border items-center justify-center p-6 bg-neutral-950 overflow-hidden ${
                 isImposter ? 'border-red-500/80' : 'border-blue-500'
               }`}
             >
               <View
-                className={`px-2.5 py-1 mb-4 border ${
+                className={`px-3 py-1 mb-4 border ${
                   isImposter
                     ? 'border-red-500 bg-red-950/30'
                     : 'border-blue-500 bg-blue-950/30'
@@ -135,41 +220,57 @@ export const RevealScreen: React.FC = () => {
                 </View>
               )}
 
-              <PressableScale
-                onPress={handleHide}
-                haptic="light"
-                activeScale={0.94}
-                accessibilityRole="button"
-                accessibilityLabel="Hide card"
-                className="mt-6 py-2 px-4 border border-neutral-800 bg-neutral-900 min-h-[40px] items-center justify-center"
-              >
-                <Text className="text-xs font-mono text-neutral-400 uppercase font-bold">
-                  HIDE CARD
-                </Text>
-              </PressableScale>
-            </View>
-          )}
+              <Text className="text-[10px] font-mono text-neutral-500 mt-5 uppercase tracking-widest">
+                RELEASE FINGER TO CONCEAL
+              </Text>
+            </Animated.View>
+
+            {/* Hidden Cover Layer (Default state) */}
+            <Animated.View
+              style={coverAnimatedStyle}
+              className="absolute inset-0 border border-neutral-800 bg-neutral-950 items-center justify-center p-6 overflow-hidden"
+            >
+              <Text className="text-xs font-mono uppercase text-neutral-500 tracking-widest font-bold mb-3">
+                [ PRIVATE CARD ]
+              </Text>
+              <Text className="text-xl font-black text-white tracking-wider">
+                HOLD TO PEEK
+              </Text>
+              <Text className="text-[10px] font-mono text-neutral-600 mt-3 uppercase tracking-wider">
+                {hasInspected ? 'VERIFIED // HOLD TO RE-PEEK' : 'PRESS & HOLD THUMB'}
+              </Text>
+            </Animated.View>
+          </Pressable>
         </View>
+
+        {/* Status Indicator */}
+        <Text className="text-[10px] font-mono text-neutral-600 mt-4 uppercase">
+          {isHolding
+            ? 'PEEKING ACTIVE'
+            : hasInspected
+            ? 'CARD CONCEALED • READY TO PASS'
+            : 'CARD LOCKED'}
+        </Text>
       </View>
 
-      {/* Action Footer */}
+      {/* Action Footer permanently docked */}
       <View>
         <PressableScale
-          disabled={!isRevealed}
+          disabled={!hasInspected}
           onPress={handleNext}
           haptic="medium"
           activeScale={0.98}
           accessibilityRole="button"
           accessibilityLabel={isLastPlayer ? 'Start discussion' : 'Next player'}
           className={`w-full h-14 items-center justify-center ${
-            isRevealed
+            hasInspected
               ? 'bg-white'
               : 'bg-neutral-900 border border-neutral-800 opacity-30'
           }`}
         >
           <Text
             className={`text-xs font-black uppercase tracking-widest ${
-              isRevealed ? 'text-black' : 'text-neutral-500'
+              hasInspected ? 'text-black' : 'text-neutral-500'
             }`}
           >
             {isLastPlayer ? 'START DISCUSSION →' : 'NEXT PLAYER →'}
