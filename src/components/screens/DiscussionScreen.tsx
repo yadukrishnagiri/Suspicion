@@ -3,10 +3,11 @@ import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import Animated, {
   FadeIn,
   FadeInDown,
-  ZoomIn,
   LinearTransition,
   Easing,
   useReducedMotion,
+  withTiming,
+  EntryAnimationsValues,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useGameStore } from '@/store/gameStore';
@@ -15,6 +16,21 @@ import { PlayerCardSwiss } from '@/components/PlayerCardSwiss';
 import { PressableScale, triggerHaptic } from '@/components/common';
 
 const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
+
+// Custom Dialog Entrance: Starts from scale(0.96) + opacity 0 (Eliminating scale(0))
+function DialogEnter(_targetValues: EntryAnimationsValues) {
+  'worklet';
+  return {
+    initialValues: {
+      opacity: 0,
+      transform: [{ scale: 0.96 }],
+    },
+    animations: {
+      opacity: withTiming(1, { duration: 180, easing: EASE_OUT }),
+      transform: [{ scale: withTiming(1, { duration: 180, easing: EASE_OUT }) }],
+    },
+  };
+}
 
 export const DiscussionScreen: React.FC = () => {
   const {
@@ -143,7 +159,7 @@ export const DiscussionScreen: React.FC = () => {
           ]}
         >
           <Animated.View
-            entering={reducedMotion ? undefined : ZoomIn.duration(180).easing(EASE_OUT)}
+            entering={reducedMotion ? undefined : DialogEnter}
             style={{ maxWidth: 380, width: '100%' }}
             className="bg-neutral-950 border border-neutral-700 p-6 shadow-2xl"
           >
@@ -212,7 +228,7 @@ export const DiscussionScreen: React.FC = () => {
           ]}
         >
           <Animated.View
-            entering={reducedMotion ? undefined : ZoomIn.duration(200).easing(EASE_OUT)}
+            entering={reducedMotion ? undefined : DialogEnter}
             style={{ maxWidth: 380, width: '100%' }}
             className="bg-neutral-950 border border-neutral-700 p-6 items-center shadow-2xl"
           >

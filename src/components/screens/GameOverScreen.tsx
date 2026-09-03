@@ -116,14 +116,7 @@ export const GameOverScreen: React.FC = () => {
         )}
 
         {/* Players Roster (Cascading Reveal) */}
-        <Animated.View
-          entering={
-            reducedMotion
-              ? undefined
-              : FadeInDown.duration(200).delay(150).easing(EASE_OUT)
-          }
-          className="mt-6"
-        >
+        <View className="mt-6">
           <Text className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest mb-2 font-bold">
             ROSTER IDENTITIES
           </Text>
@@ -134,7 +127,7 @@ export const GameOverScreen: React.FC = () => {
                 entering={
                   reducedMotion
                     ? undefined
-                    : FadeInDown.duration(180).delay(180 + idx * 30)
+                    : FadeInDown.duration(180).delay(100 + idx * 35)
                 }
                 className="flex-row items-center justify-between py-3 px-3"
               >
@@ -154,7 +147,7 @@ export const GameOverScreen: React.FC = () => {
               </Animated.View>
             ))}
           </View>
-        </Animated.View>
+        </View>
       </ScrollView>
 
       {/* Persistence & New Game Actions permanently docked */}

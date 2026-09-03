@@ -115,7 +115,7 @@ export const SetupScreen: React.FC = () => {
                           onPress={() => setPlayerCount(playerCount - 1)}
                           disabled={playerCount <= 3}
                           haptic="selection"
-                          activeScale={0.92}
+                          activeScale={0.96}
                           accessibilityRole="button"
                           accessibilityLabel="Decrease players"
                           className={`flex-1 h-12 border items-center justify-center ${
@@ -130,7 +130,7 @@ export const SetupScreen: React.FC = () => {
                           onPress={() => setPlayerCount(playerCount + 1)}
                           disabled={playerCount >= 15}
                           haptic="selection"
-                          activeScale={0.92}
+                          activeScale={0.96}
                           accessibilityRole="button"
                           accessibilityLabel="Increase players"
                           className={`flex-1 h-12 border items-center justify-center ${
@@ -157,7 +157,7 @@ export const SetupScreen: React.FC = () => {
                           onPress={() => setImposterCount(imposterCount - 1)}
                           disabled={imposterCount <= 1}
                           haptic="selection"
-                          activeScale={0.92}
+                          activeScale={0.96}
                           accessibilityRole="button"
                           accessibilityLabel="Decrease imposters"
                           className={`flex-1 h-12 border items-center justify-center ${
@@ -172,7 +172,7 @@ export const SetupScreen: React.FC = () => {
                           onPress={() => setImposterCount(imposterCount + 1)}
                           disabled={isAtMaxImposters}
                           haptic="selection"
-                          activeScale={0.92}
+                          activeScale={0.96}
                           accessibilityRole="button"
                           accessibilityLabel="Increase imposters"
                           className={`flex-1 h-12 border items-center justify-center ${
@@ -227,7 +227,7 @@ export const SetupScreen: React.FC = () => {
                           entering={
                             reducedMotion
                               ? undefined
-                              : FadeInDown.duration(150).delay(Math.min(i * 20, 200))
+                              : FadeInDown.duration(150).delay(Math.min(i * 35, 250))
                           }
                           layout={reducedMotion ? undefined : LinearTransition.duration(180)}
                           className={`flex-row items-center min-h-[48px] px-3 gap-3 ${
