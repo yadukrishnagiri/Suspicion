@@ -1,0 +1,6 @@
+{
+  "name": "Imposter",
+  "description": "Professional offline social deduction game for groups. Uncover the hidden imposter through subtle clues, interrogation, and group voting.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

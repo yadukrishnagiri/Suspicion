@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Imposter</string>
+    <string name="tagline">Offline Social Deduction Game</string>
+    <string name="start_game">Start New Game</string>
+    <string name="rules_title">Rules &amp; Strategy Guide</string>
+    <string name="player_count">Total Players</string>
+    <string name="imposter_count">Imposters</string>
+    <string name="game_mode">Game Mode</string>
+    <string name="category">Word Category</string>
+</resources>

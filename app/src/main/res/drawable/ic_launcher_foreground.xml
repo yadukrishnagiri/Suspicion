@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Minimalist Mystery Mask Emblem -->
+    <path
+        android:fillColor="#3B82F6"
+        android:pathData="M32,44 C32,36 42,32 54,34 C66,32 76,36 76,44 C76,56 68,68 54,72 C40,68 32,56 32,44 Z" />
+    <!-- Cutout Eye Visor -->
+    <path
+        android:fillColor="#090B0E"
+        android:pathData="M38,46 C42,43 48,43 51,46 C48,49 42,49 38,46 Z" />
+    <path
+        android:fillColor="#090B0E"
+        android:pathData="M57,46 C60,43 66,43 70,46 C66,49 60,49 57,46 Z" />
+    <!-- White Minimal Dot -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,54 A2,2 0 1,0 54,58 A2,2 0 1,0 54,54 Z" />
+</vector>
