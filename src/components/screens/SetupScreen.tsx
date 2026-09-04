@@ -16,6 +16,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useGameStore, CATEGORIES, getMaxImposters } from '@/store/gameStore';
+import { useAppStore } from '@/store/useAppStore';
 import { GameMode, GameCategory } from '@/types/game';
 import { PressableScale } from '@/components/common';
 
@@ -48,6 +49,7 @@ export const SetupScreen: React.FC = () => {
   const inputRefs = useRef<(TextInput | null)[]>([]);
   const reducedMotion = useReducedMotion();
   const insets = useSafeAreaInsets();
+  const { user, logout } = useAppStore();
 
   const {
     playerCount,
@@ -67,27 +69,50 @@ export const SetupScreen: React.FC = () => {
   const isAtMaxImposters = imposterCount >= maxImposters;
 
   return (
-    <View style={{ flex: 1, width: '100%', height: '100%' }} className="bg-black">
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={{ flex: 1 }}
-      >
-        <View style={{ flex: 1 }} className="max-w-md w-full self-center justify-between">
-          <ScrollView
-            style={{ flex: 1 }}
-            contentContainerStyle={{ paddingBottom: 32 }}
-            className="px-5 pt-4"
-            keyboardShouldPersistTaps="handled"
-          >
-            {/* Top Swiss Header */}
-            <View className="flex-row items-center justify-between pb-3 border-b border-neutral-800 mb-6">
-              <Text className="text-sm font-black tracking-widest text-white uppercase">
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={{ flex: 1, width: '100%', height: '100%', overflow: 'hidden' }}
+    >
+      <View style={{ flex: 1, width: '100%', height: '100%', overflow: 'hidden' }}>
+        <ScrollView
+          contentContainerStyle={{
+            paddingBottom: Math.max(insets.bottom, 20) + 120,
+            paddingTop: 16,
+          }}
+          className="flex-1 px-4 max-w-md w-full self-center"
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Top Swiss Header with Operator Tag and Exit */}
+          <View className="flex-row items-center justify-between pb-3 border-b border-neutral-800 mb-6">
+            <View className="flex-row items-center">
+              <Text className="text-sm font-black tracking-widest text-white uppercase mr-2">
                 SUSPICION
               </Text>
-              <Text className="text-xs font-mono text-neutral-500">
+              {user && (
+                <View className="px-1.5 py-0.5 bg-neutral-900 border border-neutral-800">
+                  <Text className="text-[10px] font-mono text-neutral-400 uppercase font-semibold">
+                    {user.isGuest ? 'GUEST' : user.name}
+                  </Text>
+                </View>
+              )}
+            </View>
+            <View className="flex-row items-center">
+              <Text className="text-xs font-mono text-neutral-500 mr-3">
                 {currentStep === 'landing' ? '01 / ROSTER' : '02 / RULES'}
               </Text>
+              <PressableScale
+                onPress={logout}
+                haptic="light"
+                activeScale={0.96}
+                accessibilityRole="button"
+                accessibilityLabel="Log out and return to sign in"
+              >
+                <Text className="text-[10px] font-mono text-neutral-500 uppercase">
+                  [EXIT]
+                </Text>
+              </PressableScale>
             </View>
+          </View>
 
             {currentStep === 'landing' ? (
               /* ================= PAGE 1: LANDING & ROSTER ================= */
@@ -456,6 +481,5 @@ export const SetupScreen: React.FC = () => {
           </View>
         </View>
       </KeyboardAvoidingView>
-    </View>
   );
 };

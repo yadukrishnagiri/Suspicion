@@ -24,7 +24,7 @@ const CATEGORIES: GameCategory[] = [
 
 export const SwissMonoVariant: React.FC = () => {
   const [screen, setScreen] = useState<'landing' | 'rules'>('landing');
-  const [playerCount, setPlayerCount] = useState(5);
+  const [playerCount, setPlayerCount] = useState(8);
   const [imposterCount, setImposterCount] = useState(1);
   const [names, setNames] = useState<string[]>([
     'Morgan',
@@ -32,6 +32,9 @@ export const SwissMonoVariant: React.FC = () => {
     'Quinn',
     'Avery',
     'Jordan',
+    'Player 6',
+    'Player 7',
+    'Player 8',
   ]);
   const [mode, setMode] = useState<'everyone_gets_word' | 'imposter_gets_clue' | 'blind_imposter'>(
     'everyone_gets_word'

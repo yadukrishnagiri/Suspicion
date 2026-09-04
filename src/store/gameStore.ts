@@ -59,10 +59,19 @@ export function getMinPlayers(imposters: number): number {
   return 2 * imposters + 1;
 }
 
-const DEFAULT_NAMES = ['Player 1', 'Player 2', 'Player 3', 'Player 4', 'Player 5'];
+const DEFAULT_NAMES = [
+  'Player 1',
+  'Player 2',
+  'Player 3',
+  'Player 4',
+  'Player 5',
+  'Player 6',
+  'Player 7',
+  'Player 8',
+];
 
 export const useGameStore = create<GameState>((set, get) => ({
-  playerCount: 5,
+  playerCount: 8,
   imposterCount: 1,
   participantNames: [...DEFAULT_NAMES],
   selectedMode: 'everyone_gets_word',
