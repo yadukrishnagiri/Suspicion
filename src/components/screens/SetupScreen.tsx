@@ -17,8 +17,10 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useGameStore, CATEGORIES, getMaxImposters } from '@/store/gameStore';
 import { useAppStore } from '@/store/useAppStore';
+import { usePlayerHistoryStore } from '@/store/usePlayerHistoryStore';
 import { GameMode, GameCategory } from '@/types/game';
-import { PressableScale } from '@/components/common';
+import { PressableScale, PlayerSelectionSheet } from '@/components/common';
+import { signOutService } from '@/services/authService';
 
 const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
 
@@ -45,11 +47,11 @@ const MODES: { id: GameMode; title: string; subtitle: string; label: string }[] 
 
 export const SetupScreen: React.FC = () => {
   const [currentStep, setCurrentStep] = useState<'landing' | 'rules'>('landing');
-  const [focusedInput, setFocusedInput] = useState<number | null>(null);
-  const inputRefs = useRef<(TextInput | null)[]>([]);
+  const [activePlayerIndex, setActivePlayerIndex] = useState<number | null>(null);
   const reducedMotion = useReducedMotion();
   const insets = useSafeAreaInsets();
   const { user, logout } = useAppStore();
+  const { recentNames, addNames } = usePlayerHistoryStore();
 
   const {
     playerCount,
@@ -69,11 +71,12 @@ export const SetupScreen: React.FC = () => {
   const isAtMaxImposters = imposterCount >= maxImposters;
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={{ flex: 1, width: '100%', height: '100%', overflow: 'hidden' }}
-    >
-      <View style={{ flex: 1, width: '100%', height: '100%', overflow: 'hidden' }}>
+    <>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1, width: '100%', height: '100%', overflow: 'hidden' }}
+      >
+        <View style={{ flex: 1, width: '100%', height: '100%', overflow: 'hidden' }}>
         <ScrollView
           contentContainerStyle={{
             paddingBottom: Math.max(insets.bottom, 20) + 120,
@@ -101,7 +104,10 @@ export const SetupScreen: React.FC = () => {
                 {currentStep === 'landing' ? '01 / ROSTER' : '02 / RULES'}
               </Text>
               <PressableScale
-                onPress={logout}
+                onPress={async () => {
+                  await signOutService();
+                  logout();
+                }}
                 haptic="light"
                 activeScale={0.96}
                 accessibilityRole="button"
@@ -245,7 +251,9 @@ export const SetupScreen: React.FC = () => {
                     className="border-t border-b border-neutral-800 divide-y divide-neutral-800 bg-neutral-950"
                   >
                     {Array.from({ length: playerCount }).map((_, i) => {
-                      const isFocused = focusedInput === i;
+                      const currentValue = participantNames[i] ?? `Player ${i + 1}`;
+                      const isDefaultName = /^Player \d+$/.test(currentValue);
+
                       return (
                         <Animated.View
                           key={i}
@@ -255,36 +263,20 @@ export const SetupScreen: React.FC = () => {
                               : FadeInDown.duration(150).delay(Math.min(i * 35, 250))
                           }
                           layout={reducedMotion ? undefined : LinearTransition.duration(180)}
-                          className={`flex-row items-center min-h-[48px] px-3 gap-3 ${
-                            isFocused
-                              ? 'bg-neutral-900 border-l-2 border-blue-500'
-                              : 'bg-transparent'
-                          }`}
+                          className="flex-col bg-transparent"
                         >
-                          <Text className="text-xs font-mono text-neutral-500 w-6">
-                            {String(i + 1).padStart(2, '0')}
-                          </Text>
-                          <TextInput
-                            ref={(el) => {
-                              inputRefs.current[i] = el;
-                            }}
-                            value={participantNames[i] ?? `Player ${i + 1}`}
-                            onChangeText={(val) => setParticipantName(i, val)}
-                            onFocus={() => setFocusedInput(i)}
-                            onBlur={() => setFocusedInput(null)}
-                            placeholder={`Player ${i + 1}`}
-                            placeholderTextColor="#525252"
-                            returnKeyType={i === playerCount - 1 ? 'done' : 'next'}
-                            onSubmitEditing={() => {
-                              if (i < playerCount - 1) {
-                                inputRefs.current[i + 1]?.focus();
-                              }
-                            }}
-                            autoCapitalize="words"
-                            autoCorrect={false}
-                            accessibilityLabel={`Player ${i + 1} name`}
-                            className="flex-1 text-sm font-medium text-white outline-none py-2"
-                          />
+                          <PressableScale
+                            onPress={() => setActivePlayerIndex(i)}
+                            activeScale={0.97}
+                            className="flex-row items-center min-h-[48px] px-3 gap-3 py-2"
+                          >
+                            <Text className="text-xs font-mono text-neutral-500 w-6">
+                              {String(i + 1).padStart(2, '0')}
+                            </Text>
+                            <Text className={`flex-1 text-sm font-medium ${isDefaultName ? 'text-neutral-500' : 'text-white'}`}>
+                              {currentValue}
+                            </Text>
+                          </PressableScale>
                         </Animated.View>
                       );
                     })}
@@ -466,7 +458,10 @@ export const SetupScreen: React.FC = () => {
               </PressableScale>
             ) : (
               <PressableScale
-                onPress={startNewGame}
+                onPress={() => {
+                  addNames(participantNames);
+                  startNewGame();
+                }}
                 haptic="medium"
                 activeScale={0.98}
                 accessibilityRole="button"
@@ -481,5 +476,24 @@ export const SetupScreen: React.FC = () => {
           </View>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Sheet rendered outside of main scrolling flow */}
+      <PlayerSelectionSheet
+        isVisible={activePlayerIndex !== null}
+        onClose={() => setActivePlayerIndex(null)}
+        initialValue={
+          activePlayerIndex !== null 
+            ? (participantNames[activePlayerIndex] ?? `Player ${activePlayerIndex + 1}`) 
+            : ''
+        }
+        onSelectName={(name) => {
+          if (activePlayerIndex !== null) {
+            setParticipantName(activePlayerIndex, name);
+          }
+        }}
+        recentNames={recentNames}
+        alreadySelectedNames={participantNames}
+      />
+    </>
   );
 };

@@ -14,6 +14,7 @@ import Animated, {
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '@/store/useAppStore';
 import { PressableScale } from '@/components/common';
+import { signInWithGoogleService } from '@/services/authService';
 
 const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
 
@@ -29,12 +30,15 @@ export const LoginScreen: React.FC = () => {
     setAuthError(null);
 
     try {
-      // Simulated Google OAuth handshake
-      // In production with native credentials, this triggers Expo AuthSession / Google Sign-In
-      await new Promise((resolve) => setTimeout(resolve, 850));
-      loginWithGoogle();
-    } catch (err) {
-      setAuthError('Authentication handshake failed. Try again or continue as guest.');
+      const userProfile = await signInWithGoogleService();
+      loginWithGoogle(userProfile);
+    } catch (err: any) {
+      console.warn('[Google Auth]', err);
+      if (err?.code === 'auth/popup-closed-by-user') {
+        setIsLoading(false);
+        return;
+      }
+      setAuthError(err?.message || 'Authentication handshake failed. Try again or continue as guest.');
       setIsLoading(false);
     }
   };

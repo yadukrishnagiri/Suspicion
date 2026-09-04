@@ -21,6 +21,15 @@ expo-env.d.ts
 *.key
 *.keystore
 *.mobileprovision
+google-services.json
+GoogleService-Info.plist
+firebase-service-account.json
+
+# Firebase
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+*-debug.log
 
 # Android & Gradle
 .gradle/

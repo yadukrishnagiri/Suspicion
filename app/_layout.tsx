@@ -5,6 +5,7 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { useAppInitialization } from "@/hooks/useAppInitialization";
 
 if (Platform.OS === "web") {
   try {
@@ -15,6 +16,8 @@ if (Platform.OS === "web") {
 }
 
 export default function RootLayout() {
+  useAppInitialization();
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
