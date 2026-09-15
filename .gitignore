@@ -11,7 +11,7 @@ web-build/
 expo-env.d.ts
 .metro-health-check*
 
-# Environment & Secrets
+# Environment & Local Secrets
 .env
 .env*.local
 *.pem
@@ -21,7 +21,6 @@ expo-env.d.ts
 *.key
 *.keystore
 *.mobileprovision
-google-services.json
 GoogleService-Info.plist
 firebase-service-account.json
 
@@ -31,7 +30,7 @@ firebase-debug.log
 firebase-debug.*.log
 *-debug.log
 
-# Android & Gradle
+# Android & Gradle Build Artifacts
 .gradle/
 build/
 */build/
@@ -61,3 +60,7 @@ ehthumbs.db
 
 # TypeScript
 *.tsbuildinfo
+
+# Agents & Skills
+.agents/
+skills-lock.json

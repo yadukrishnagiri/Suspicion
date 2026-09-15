@@ -4,7 +4,6 @@ import {
   getAuth,
   GoogleAuthProvider,
   Auth,
-  getReactNativePersistence,
 } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { Platform } from 'react-native';
@@ -32,9 +31,15 @@ if (Platform.OS === 'web') {
   authInstance = getAuth(app);
 } else {
   try {
-    authInstance = initializeAuth(app, {
-      persistence: getReactNativePersistence(AsyncStorage),
-    });
+    const authModule = require('firebase/auth');
+    const persistenceFn = authModule.getReactNativePersistence;
+    if (persistenceFn) {
+      authInstance = initializeAuth(app, {
+        persistence: persistenceFn(AsyncStorage),
+      });
+    } else {
+      authInstance = getAuth(app);
+    }
   } catch {
     try {
       authInstance = getAuth(app);

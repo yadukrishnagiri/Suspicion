@@ -28,9 +28,19 @@ interface AppState {
 }
 
 export const useAppStore = create<AppState>((set) => ({
-  isInitialized: false,
-  user: null,
-  isAuthenticated: false,
+  isInitialized: true,
+  user: {
+    id: 'host_01',
+    name: 'Game Host',
+    isGuest: true,
+    stats: {
+      gamesPlayed: 0,
+      citizenWins: 0,
+      imposterWins: 0,
+      timesImposter: 0,
+    },
+  },
+  isAuthenticated: true,
   setInitialized: (value) => set({ isInitialized: value }),
   setUser: (user) => set({ user, isAuthenticated: !!user }),
   loginWithGoogle: (profile) =>

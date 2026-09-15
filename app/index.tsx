@@ -8,18 +8,16 @@ import Animated, {
   useReducedMotion,
 } from 'react-native-reanimated';
 import { useGameStore } from '@/store/gameStore';
-import { useAppStore } from '@/store/useAppStore';
-import { LoginScreen } from '@/components/screens/LoginScreen';
 import { SetupScreen } from '@/components/screens/SetupScreen';
 import { RevealScreen } from '@/components/screens/RevealScreen';
 import { DiscussionScreen } from '@/components/screens/DiscussionScreen';
 import { GameOverScreen } from '@/components/screens/GameOverScreen';
+import { COLORS } from '@/constants/theme';
 
 const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
 
 export default function HomeScreen() {
   const { phase } = useGameStore();
-  const { isAuthenticated } = useAppStore();
   const reducedMotion = useReducedMotion();
 
   const enterAnim = reducedMotion
@@ -32,62 +30,49 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView
-      edges={['top', 'left', 'right']}
-      style={{ flex: 1, width: '100%', height: '100%', backgroundColor: '#000000', overflow: 'hidden' }}
+      edges={['top', 'left', 'right', 'bottom']}
+      style={{ flex: 1, backgroundColor: COLORS.bg }}
     >
-      <View style={{ flex: 1, width: '100%', height: '100%', overflow: 'hidden' }}>
-        {!isAuthenticated ? (
+      <View style={{ flex: 1, backgroundColor: COLORS.bg }}>
+        {phase === 'setup' && (
           <Animated.View
-            key="login"
+            key="setup"
             entering={enterAnim}
             exiting={exitAnim}
-            style={{ flex: 1, width: '100%', height: '100%' }}
+            style={{ flex: 1 }}
           >
-            <LoginScreen />
+            <SetupScreen />
           </Animated.View>
-        ) : (
-          <>
-            {phase === 'setup' && (
-              <Animated.View
-                key="setup"
-                entering={enterAnim}
-                exiting={exitAnim}
-                style={{ flex: 1, width: '100%', height: '100%' }}
-              >
-                <SetupScreen />
-              </Animated.View>
-            )}
-            {phase === 'reveal' && (
-              <Animated.View
-                key="reveal"
-                entering={enterAnim}
-                exiting={exitAnim}
-                style={{ flex: 1, width: '100%', height: '100%' }}
-              >
-                <RevealScreen />
-              </Animated.View>
-            )}
-            {phase === 'discussion' && (
-              <Animated.View
-                key="discussion"
-                entering={enterAnim}
-                exiting={exitAnim}
-                style={{ flex: 1, width: '100%', height: '100%' }}
-              >
-                <DiscussionScreen />
-              </Animated.View>
-            )}
-            {phase === 'game_over' && (
-              <Animated.View
-                key="game_over"
-                entering={enterAnim}
-                exiting={exitAnim}
-                style={{ flex: 1, width: '100%', height: '100%' }}
-              >
-                <GameOverScreen />
-              </Animated.View>
-            )}
-          </>
+        )}
+        {phase === 'reveal' && (
+          <Animated.View
+            key="reveal"
+            entering={enterAnim}
+            exiting={exitAnim}
+            style={{ flex: 1 }}
+          >
+            <RevealScreen />
+          </Animated.View>
+        )}
+        {phase === 'discussion' && (
+          <Animated.View
+            key="discussion"
+            entering={enterAnim}
+            exiting={exitAnim}
+            style={{ flex: 1 }}
+          >
+            <DiscussionScreen />
+          </Animated.View>
+        )}
+        {phase === 'game_over' && (
+          <Animated.View
+            key="game_over"
+            entering={enterAnim}
+            exiting={exitAnim}
+            style={{ flex: 1 }}
+          >
+            <GameOverScreen />
+          </Animated.View>
         )}
       </View>
     </SafeAreaView>

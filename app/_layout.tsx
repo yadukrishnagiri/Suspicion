@@ -5,26 +5,17 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { useAppInitialization } from "@/hooks/useAppInitialization";
-
-if (Platform.OS === "web") {
-  try {
-    (StyleSheet as any).setFlag?.("darkMode", "class");
-  } catch (e) {
-    // Flag already set or noop
-  }
-}
+import { COLORS } from "@/constants/theme";
 
 export default function RootLayout() {
-  useAppInitialization();
-
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: COLORS.bg }}>
       <SafeAreaProvider>
-        <StatusBar style="auto" />
+        <StatusBar style="dark" />
         <Stack
           screenOptions={{
             headerShown: false,
+            contentStyle: { backgroundColor: COLORS.bg },
           }}
         />
       </SafeAreaProvider>

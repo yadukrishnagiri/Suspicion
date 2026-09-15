@@ -1,282 +1,251 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Pressable } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
-  interpolate,
-  Easing,
-  useReducedMotion,
-} from 'react-native-reanimated';
+import { View, Text, Pressable, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useGameStore } from '@/store/gameStore';
-import { PressableScale, triggerHaptic } from '@/components/common';
-
-const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
+import { COLORS, BRUTAL } from '@/constants/theme';
 
 export const RevealScreen: React.FC = () => {
   const {
     players,
     currentRevealIndex,
     selectedMode,
+    selectedCategory,
     nextReveal,
-    finishRevealAndStartDiscussion,
   } = useGameStore();
 
   const insets = useSafeAreaInsets();
-  const [hasInspected, setHasInspected] = useState(false);
-  const [isHolding, setIsHolding] = useState(false);
+  const [isRevealed, setIsRevealed] = useState(false);
 
   const currentPlayer = players[currentRevealIndex];
   const isLastPlayer = currentRevealIndex >= players.length - 1;
   const isImposter = currentPlayer?.role === 'imposter';
 
-  const reducedMotion = useReducedMotion();
-
-  // Reveal spring: 0 = hidden, 1 = revealed
-  const revealProgress = useSharedValue(0);
-
-  // Animated progress bar
-  const progressWidth = useSharedValue(
-    ((currentRevealIndex + 1) / (players.length || 1)) * 100
-  );
-
+  // Reset revealed state when reveal index changes
   useEffect(() => {
-    progressWidth.set(
-      withTiming(((currentRevealIndex + 1) / (players.length || 1)) * 100, {
-        duration: 200,
-        easing: EASE_OUT,
-      })
-    );
-  }, [currentRevealIndex, players.length]);
-
-  // Reset inspection state when switching players
-  useEffect(() => {
-    setHasInspected(false);
-    setIsHolding(false);
-    revealProgress.set(0);
+    setIsRevealed(false);
   }, [currentRevealIndex]);
 
   if (!currentPlayer) return null;
 
-  const handlePressIn = () => {
-    setIsHolding(true);
-    setHasInspected(true);
-    triggerHaptic('medium');
-
-    if (reducedMotion) {
-      revealProgress.set(1);
-    } else {
-      revealProgress.set(
-        withSpring(1, {
-          duration: 180,
-          dampingRatio: 0.85,
-        })
-      );
-    }
-  };
-
-  const handlePressOut = () => {
-    setIsHolding(false);
-    triggerHaptic('light');
-
-    if (reducedMotion) {
-      revealProgress.set(0);
-    } else {
-      // Instant snap-shut to prevent peeking
-      revealProgress.set(
-        withSpring(0, {
-          duration: 120,
-          dampingRatio: 1,
-        })
-      );
-    }
-  };
-
-  const handleNext = () => {
-    if (isLastPlayer) {
-      finishRevealAndStartDiscussion();
-    } else {
-      nextReveal();
-    }
-  };
-
-  // UI-thread animated styles
-  const coverAnimatedStyle = useAnimatedStyle(() => {
-    const opacity = interpolate(revealProgress.get(), [0, 0.4], [1, 0]);
-    const scale = interpolate(revealProgress.get(), [0, 1], [1, 0.98]);
-    return {
-      opacity,
-      transform: [{ scale }],
-      pointerEvents: revealProgress.get() > 0.5 ? 'none' : 'auto',
-    };
-  });
-
-  const secretAnimatedStyle = useAnimatedStyle(() => {
-    const opacity = interpolate(revealProgress.get(), [0.3, 1], [0, 1]);
-    const scale = interpolate(revealProgress.get(), [0, 1], [0.98, 1]);
-    return {
-      opacity,
-      transform: [{ scale }],
-    };
-  });
-
-  const progressBarAnimatedStyle = useAnimatedStyle(() => ({
-    width: `${progressWidth.get()}%`,
-  }));
-
   return (
-    <View
-      style={{
-        flex: 1,
-        width: '100%',
-        height: '100%',
-        paddingBottom: Math.max(insets.bottom, 16),
-      }}
-      className="bg-black px-5 pt-6 justify-between max-w-md w-full self-center"
-    >
-      {/* Top Header & Animated Progress */}
-      <View>
-        <View className="flex-row items-center justify-between pb-3 border-b border-neutral-800 mb-3">
-          <Text className="text-sm font-black tracking-widest text-white uppercase">
-            SUSPICION
-          </Text>
-          <Text className="text-xs font-mono text-neutral-500">
-            {String(currentRevealIndex + 1).padStart(2, '0')} /{' '}
-            {String(players.length).padStart(2, '0')}
-          </Text>
-        </View>
+    <View style={{ flex: 1, backgroundColor: COLORS.bg, paddingBottom: Math.max(insets.bottom, 20), paddingTop: 12 }}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, flexGrow: 1, justifyContent: 'space-between' }}>
+        {/* Top Progress Bar */}
+        <View style={{ marginBottom: 16 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <View
+              style={{
+                backgroundColor: COLORS.lavender,
+                paddingHorizontal: 10,
+                paddingVertical: 4,
+                borderRadius: BRUTAL.pill,
+                ...BRUTAL.border,
+              }}
+            >
+              <Text style={{ fontSize: 11, fontWeight: '800', color: COLORS.dark }}>
+                player {currentRevealIndex + 1} of {players.length}
+              </Text>
+            </View>
+            <Text style={{ fontSize: 11, fontWeight: '700', color: COLORS.textMuted }}>
+              pass in seating order
+            </Text>
+          </View>
 
-        {/* Hairline Progress Bar */}
-        <View className="w-full h-1 bg-neutral-900 overflow-hidden">
-          <Animated.View
-            className="h-full bg-blue-500"
-            style={progressBarAnimatedStyle}
-          />
-        </View>
-      </View>
-
-      {/* Center Pass Instruction */}
-      <View className="items-center my-auto w-full">
-        <Text className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest">
-          PASS DEVICE TO
-        </Text>
-        <Text className="text-4xl font-black text-white mt-1 uppercase text-center tracking-tight">
-          {currentPlayer.name}
-        </Text>
-
-        {/* Option B: Hold-to-Reveal Card (Strictly Bounded) */}
-        <View className="w-full mt-8 h-64 relative overflow-hidden">
-          <Pressable
-            onPressIn={handlePressIn}
-            onPressOut={handlePressOut}
-            accessibilityRole="button"
-            accessibilityLabel={`Hold to peek role for ${currentPlayer.name}. Release to conceal.`}
-            className="w-full h-full"
+          <View
+            style={{
+              height: 10,
+              backgroundColor: COLORS.surface,
+              borderRadius: BRUTAL.pill,
+              overflow: 'hidden',
+              ...BRUTAL.border,
+            }}
           >
-            {/* Secret Content Layer (Visible only while finger is down) */}
-            <Animated.View
-              style={secretAnimatedStyle}
-              className={`absolute inset-0 border items-center justify-center p-6 bg-neutral-950 overflow-hidden ${
-                isImposter ? 'border-red-500/80' : 'border-blue-500'
-              }`}
+            <View
+              style={{
+                height: '100%',
+                width: `${((currentRevealIndex + 1) / players.length) * 100}%`,
+                backgroundColor: COLORS.coral,
+              }}
+            />
+          </View>
+        </View>
+
+        {/* Card Stage */}
+        <View style={{ flex: 1, justifyContent: 'center', marginVertical: 12 }}>
+          {!isRevealed ? (
+            /* Front Face: Privacy Pass Screen */
+            <View
+              style={{
+                backgroundColor: COLORS.surface,
+                borderRadius: BRUTAL.rLg,
+                padding: 24,
+                alignItems: 'center',
+                ...BRUTAL.borderThick,
+                ...BRUTAL.shadowLg,
+                minHeight: 400,
+                justifyContent: 'space-between',
+              }}
             >
               <View
-                className={`px-3 py-1 mb-4 border ${
-                  isImposter
-                    ? 'border-red-500 bg-red-950/30'
-                    : 'border-blue-500 bg-blue-950/30'
-                }`}
+                style={{
+                  backgroundColor: COLORS.yellow,
+                  paddingHorizontal: 12,
+                  paddingVertical: 4,
+                  borderRadius: BRUTAL.pill,
+                  ...BRUTAL.border,
+                }}
               >
-                <Text
-                  className={`text-[10px] font-mono font-bold uppercase tracking-widest ${
-                    isImposter ? 'text-red-400' : 'text-blue-400'
-                  }`}
-                >
-                  {isImposter ? 'IMPOSTER' : 'CITIZEN'}
+                <Text style={{ fontSize: 11, fontWeight: '800' }}>pass phone to</Text>
+              </View>
+
+              <View style={{ alignItems: 'center', marginVertical: 20 }}>
+                <Text style={{ fontSize: 40, fontWeight: '900', textAlign: 'center', color: COLORS.dark, letterSpacing: -1 }}>
+                  {currentPlayer.name}
+                </Text>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: COLORS.textMuted, marginTop: 4 }}>
+                  seat {currentPlayer.id.replace('player_', '') ? Number(currentPlayer.id.replace('player_', '')) + 1 : currentRevealIndex + 1}
                 </Text>
               </View>
 
-              {currentPlayer.assignedWordOrHint ? (
-                <>
-                  <Text className="text-3xl font-black text-white text-center uppercase tracking-wider">
-                    {currentPlayer.assignedWordOrHint}
-                  </Text>
-                  {isImposter && selectedMode === 'imposter_gets_clue' && (
-                    <Text className="text-xs font-mono text-blue-300 mt-2 text-center uppercase tracking-wider">
-                      INDIRECT CLUE
-                    </Text>
-                  )}
-                </>
-              ) : (
-                <View className="items-center">
-                  <Text className="text-2xl font-black text-red-500 text-center uppercase tracking-wider">
-                    BLIND IMPOSTER
-                  </Text>
-                  <Text className="text-xs font-mono text-neutral-500 mt-1 uppercase tracking-wider">
-                    NO CLUE
-                  </Text>
-                </View>
-              )}
+              <View
+                style={{
+                  backgroundColor: COLORS.bg,
+                  borderRadius: BRUTAL.r,
+                  padding: 16,
+                  borderWidth: 2,
+                  borderStyle: 'dashed',
+                  borderColor: COLORS.dark,
+                  width: '100%',
+                  marginBottom: 16,
+                }}
+              >
+                <Text style={{ fontSize: 12, fontWeight: '600', color: COLORS.textMuted, textAlign: 'center', lineHeight: 18 }}>
+                  🔒 <Text style={{ fontWeight: '800', color: COLORS.dark }}>Privacy Check:</Text> Make sure only <Text style={{ fontWeight: '800', color: COLORS.dark }}>{currentPlayer.name}</Text> can see the screen before tapping.
+                </Text>
+              </View>
 
-              <Text className="text-[10px] font-mono text-neutral-500 mt-5 uppercase tracking-widest">
-                RELEASE FINGER TO CONCEAL
-              </Text>
-            </Animated.View>
-
-            {/* Hidden Cover Layer (Default state) */}
-            <Animated.View
-              style={coverAnimatedStyle}
-              className="absolute inset-0 border border-neutral-800 bg-neutral-950 items-center justify-center p-6 overflow-hidden"
+              <Pressable
+                onPress={() => setIsRevealed(true)}
+                style={({ pressed }) => ({
+                  width: '100%',
+                  backgroundColor: COLORS.coral,
+                  borderRadius: BRUTAL.rLg,
+                  paddingVertical: 16,
+                  paddingHorizontal: 20,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  ...BRUTAL.border,
+                  ...BRUTAL.shadow,
+                  transform: pressed ? [{ translateX: 2 }, { translateY: 2 }] : [],
+                })}
+              >
+                <Text style={{ fontSize: 15, fontWeight: '900', color: '#fff' }}>
+                  TAP TO REVEAL SECRET
+                </Text>
+                <Text style={{ fontSize: 18 }}>👁️</Text>
+              </Pressable>
+            </View>
+          ) : (
+            /* Back Face: Secret Revealed Screen */
+            <View
+              style={{
+                backgroundColor: isImposter ? COLORS.pink : COLORS.yellow,
+                borderRadius: BRUTAL.rLg,
+                padding: 24,
+                alignItems: 'center',
+                ...BRUTAL.borderThick,
+                ...BRUTAL.shadowLg,
+                minHeight: 400,
+                justifyContent: 'space-between',
+              }}
             >
-              <Text className="text-xs font-mono uppercase text-neutral-500 tracking-widest font-bold mb-3">
-                [ PRIVATE CARD ]
+              <View
+                style={{
+                  backgroundColor: isImposter ? COLORS.coral : COLORS.teal,
+                  paddingHorizontal: 12,
+                  paddingVertical: 4,
+                  borderRadius: BRUTAL.pill,
+                  ...BRUTAL.border,
+                }}
+              >
+                <Text style={{ fontSize: 11, fontWeight: '900', color: '#fff' }}>
+                  {isImposter ? '🕵️ YOU ARE AN IMPOSTER' : '🛡️ YOU ARE A CITIZEN'}
+                </Text>
+              </View>
+
+              <Text style={{ fontSize: 11, fontWeight: '800', color: COLORS.dark, marginTop: 6 }}>
+                category: {selectedCategory}
               </Text>
-              <Text className="text-xl font-black text-white tracking-wider">
-                HOLD TO PEEK
+
+              {/* Main Word / Secret Box */}
+              <View
+                style={{
+                  backgroundColor: COLORS.surface,
+                  borderRadius: BRUTAL.rLg,
+                  padding: 20,
+                  width: '100%',
+                  alignItems: 'center',
+                  marginVertical: 16,
+                  ...BRUTAL.border,
+                  ...BRUTAL.shadow,
+                }}
+              >
+                <Text style={{ fontSize: 10, fontWeight: '800', color: COLORS.textMuted, textTransform: 'uppercase', marginBottom: 4 }}>
+                  {isImposter ? (selectedMode === 'imposter_gets_clue' ? 'your secret hint' : 'your secret word') : 'your secret word'}
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 34,
+                    fontWeight: '900',
+                    textAlign: 'center',
+                    color: isImposter ? COLORS.coral : COLORS.dark,
+                    letterSpacing: -0.5,
+                  }}
+                >
+                  {currentPlayer.assignedWordOrHint || (selectedMode === 'blind_imposter' ? '???' : '???')}
+                </Text>
+              </View>
+
+              <Text style={{ fontSize: 12, fontWeight: '600', color: COLORS.dark, textAlign: 'center', lineHeight: 17, marginBottom: 14 }}>
+                {isImposter
+                  ? (selectedMode === 'everyone_gets_word'
+                      ? '⚠️ Your word is slightly different from the Citizens. Blend in and don\'t get caught!'
+                      : selectedMode === 'imposter_gets_clue'
+                      ? '⚠️ You have an indirect hint instead of the word. Bluff and deduce what they are talking about!'
+                      : '⚠️ You have NO word and NO hint! Listen closely to everyone\'s clues and bluff your way through.')
+                  : '💡 Memorize your word! During discussion, you will say ONE spoken clue hinting at this word.'}
               </Text>
-              <Text className="text-[10px] font-mono text-neutral-600 mt-3 uppercase tracking-wider">
-                {hasInspected ? 'VERIFIED // HOLD TO RE-PEEK' : 'PRESS & HOLD THUMB'}
-              </Text>
-            </Animated.View>
-          </Pressable>
+
+              <Pressable
+                onPress={() => nextReveal()}
+                style={({ pressed }) => ({
+                  width: '100%',
+                  backgroundColor: isLastPlayer ? COLORS.teal : COLORS.surface,
+                  borderRadius: BRUTAL.rLg,
+                  paddingVertical: 16,
+                  paddingHorizontal: 20,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  ...BRUTAL.border,
+                  ...BRUTAL.shadow,
+                  transform: pressed ? [{ translateX: 2 }, { translateY: 2 }] : [],
+                })}
+              >
+                <Text style={{ fontSize: 15, fontWeight: '900', color: isLastPlayer ? '#fff' : COLORS.dark }}>
+                  {isLastPlayer ? 'FINISH & START DISCUSSION' : 'HIDE CARD & PASS PHONE'}
+                </Text>
+                <Text style={{ fontSize: 18 }}>{isLastPlayer ? '→' : '🔒'}</Text>
+              </Pressable>
+            </View>
+          )}
         </View>
 
-        {/* Status Indicator */}
-        <Text className="text-[10px] font-mono text-neutral-600 mt-4 uppercase">
-          {isHolding
-            ? 'PEEKING ACTIVE'
-            : hasInspected
-            ? 'CARD CONCEALED • READY TO PASS'
-            : 'CARD LOCKED'}
+        <Text style={{ fontSize: 11, fontWeight: '600', color: COLORS.textMuted, textAlign: 'center' }}>
+          phone remains in hands of the current player
         </Text>
-      </View>
-
-      {/* Action Footer permanently docked */}
-      <View>
-        <PressableScale
-          disabled={!hasInspected}
-          onPress={handleNext}
-          haptic="medium"
-          activeScale={0.98}
-          accessibilityRole="button"
-          accessibilityLabel={isLastPlayer ? 'Start discussion' : 'Next player'}
-          className={`w-full h-14 items-center justify-center ${
-            hasInspected
-              ? 'bg-white'
-              : 'bg-neutral-900 border border-neutral-800 opacity-30'
-          }`}
-        >
-          <Text
-            className={`text-xs font-black uppercase tracking-widest ${
-              hasInspected ? 'text-black' : 'text-neutral-500'
-            }`}
-          >
-            {isLastPlayer ? 'START DISCUSSION →' : 'NEXT PLAYER →'}
-          </Text>
-        </PressableScale>
-      </View>
+      </ScrollView>
     </View>
   );
 };

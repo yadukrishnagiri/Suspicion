@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,52 +6,44 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
 } from 'react-native';
 import Animated, {
   FadeIn,
-  FadeInDown,
-  LinearTransition,
   Easing,
   useReducedMotion,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useGameStore, CATEGORIES, getMaxImposters } from '@/store/gameStore';
-import { useAppStore } from '@/store/useAppStore';
-import { usePlayerHistoryStore } from '@/store/usePlayerHistoryStore';
+import { useGameStore, CATEGORIES, getMaxImposters, getMinPlayers } from '@/store/gameStore';
 import { GameMode, GameCategory } from '@/types/game';
-import { PressableScale, PlayerSelectionSheet } from '@/components/common';
-import { signOutService } from '@/services/authService';
+import { COLORS, BRUTAL } from '@/constants/theme';
 
 const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
 
-const MODES: { id: GameMode; title: string; subtitle: string; label: string }[] = [
+const MODES: { id: GameMode; title: string; subtitle: string; tag: string }[] = [
   {
     id: 'everyone_gets_word',
-    title: 'Everyone Gets a Word',
-    subtitle: 'Main Word vs Imposter Word',
-    label: 'Everyone Gets a Word: Normal players get Main Word, Imposter gets secret related word.',
+    title: 'mode 1: word vs word',
+    subtitle: 'imposters get a counterpart word. subtle conversational clashes.',
+    tag: 'subtle',
   },
   {
     id: 'imposter_gets_clue',
-    title: 'Imposter Gets a Clue',
-    subtitle: 'Indirect situational clue',
-    label: 'Imposter Gets a Clue: Normal players get Main Word, Imposter gets an indirect hint.',
+    title: 'mode 2: word vs hint',
+    subtitle: 'imposters get an indirect contextual clue without the exact word.',
+    tag: 'bluffing',
   },
   {
     id: 'blind_imposter',
-    title: 'Blind Imposter',
-    subtitle: 'Zero clues provided',
-    label: 'Blind Imposter: Imposter receives no clues and blends in.',
+    title: 'mode 3: blind imposter',
+    subtitle: 'imposters receive nothing ("???"). pure listening and deduction.',
+    tag: 'hardcore',
   },
 ];
 
 export const SetupScreen: React.FC = () => {
-  const [currentStep, setCurrentStep] = useState<'landing' | 'rules'>('landing');
-  const [activePlayerIndex, setActivePlayerIndex] = useState<number | null>(null);
   const reducedMotion = useReducedMotion();
   const insets = useSafeAreaInsets();
-  const { user, logout } = useAppStore();
-  const { recentNames, addNames } = usePlayerHistoryStore();
 
   const {
     playerCount,
@@ -68,432 +60,403 @@ export const SetupScreen: React.FC = () => {
   } = useGameStore();
 
   const maxImposters = getMaxImposters(playerCount);
+  const minRequired = getMinPlayers(imposterCount);
   const isAtMaxImposters = imposterCount >= maxImposters;
 
   return (
-    <>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={{ flex: 1, width: '100%', height: '100%', overflow: 'hidden' }}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={{ flex: 1, backgroundColor: COLORS.bg }}
+    >
+      <ScrollView
+        contentContainerStyle={{
+          paddingBottom: Math.max(insets.bottom, 20) + 40,
+          paddingTop: 12,
+          paddingHorizontal: 16,
+        }}
+        keyboardShouldPersistTaps="handled"
       >
-        <View style={{ flex: 1, width: '100%', height: '100%', overflow: 'hidden' }}>
-        <ScrollView
-          contentContainerStyle={{
-            paddingBottom: Math.max(insets.bottom, 20) + 120,
-            paddingTop: 16,
+        {/* Magazine App Header */}
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingBottom: 12,
+            borderBottomWidth: 2,
+            borderColor: COLORS.border,
+            marginBottom: 16,
           }}
-          className="flex-1 px-4 max-w-md w-full self-center"
-          keyboardShouldPersistTaps="handled"
         >
-          {/* Top Swiss Header with Operator Tag and Exit */}
-          <View className="flex-row items-center justify-between pb-3 border-b border-neutral-800 mb-6">
-            <View className="flex-row items-center">
-              <Text className="text-sm font-black tracking-widest text-white uppercase mr-2">
-                SUSPICION
-              </Text>
-              {user && (
-                <View className="px-1.5 py-0.5 bg-neutral-900 border border-neutral-800">
-                  <Text className="text-[10px] font-mono text-neutral-400 uppercase font-semibold">
-                    {user.isGuest ? 'GUEST' : user.name}
-                  </Text>
-                </View>
-              )}
-            </View>
-            <View className="flex-row items-center">
-              <Text className="text-xs font-mono text-neutral-500 mr-3">
-                {currentStep === 'landing' ? '01 / ROSTER' : '02 / RULES'}
-              </Text>
-              <PressableScale
-                onPress={async () => {
-                  await signOutService();
-                  logout();
-                }}
-                haptic="light"
-                activeScale={0.96}
-                accessibilityRole="button"
-                accessibilityLabel="Log out and return to sign in"
-              >
-                <Text className="text-[10px] font-mono text-neutral-500 uppercase">
-                  [EXIT]
-                </Text>
-              </PressableScale>
-            </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View
+              style={{
+                width: 12,
+                height: 12,
+                borderRadius: 6,
+                backgroundColor: COLORS.coral,
+                ...BRUTAL.border,
+              }}
+            />
+            <Text style={{ fontSize: 18, fontWeight: '800', letterSpacing: -0.5, color: COLORS.text }}>
+              suspicion.
+            </Text>
           </View>
-
-            {currentStep === 'landing' ? (
-              /* ================= PAGE 1: LANDING & ROSTER ================= */
-              <Animated.View
-                key="step-landing"
-                entering={
-                  reducedMotion
-                    ? undefined
-                    : FadeIn.duration(180).easing(EASE_OUT)
-                }
-              >
-                {/* Split Metric Counter Block */}
-                <View className="border border-neutral-800 divide-y divide-neutral-800 mb-6 bg-neutral-950">
-                  <View className="flex-row divide-x divide-neutral-800">
-                    {/* Total Players */}
-                    <View className="flex-1 p-4">
-                      <Text className="text-[10px] font-mono uppercase text-neutral-500 tracking-wider font-bold">
-                        PLAYERS
-                      </Text>
-                      <Text className="text-5xl font-black text-white my-1 tracking-tight">
-                        {playerCount}
-                      </Text>
-                      <View className="flex-row gap-2 mt-2">
-                        <PressableScale
-                          onPress={() => setPlayerCount(playerCount - 1)}
-                          disabled={playerCount <= 3}
-                          haptic="selection"
-                          activeScale={0.96}
-                          accessibilityRole="button"
-                          accessibilityLabel="Decrease players"
-                          className={`flex-1 h-12 border items-center justify-center ${
-                            playerCount <= 3
-                              ? 'border-neutral-800 bg-neutral-900 opacity-20'
-                              : 'border-neutral-700 bg-neutral-900'
-                          }`}
-                        >
-                          <Text className="text-xl font-bold text-white">-</Text>
-                        </PressableScale>
-                        <PressableScale
-                          onPress={() => setPlayerCount(playerCount + 1)}
-                          disabled={playerCount >= 15}
-                          haptic="selection"
-                          activeScale={0.96}
-                          accessibilityRole="button"
-                          accessibilityLabel="Increase players"
-                          className={`flex-1 h-12 border items-center justify-center ${
-                            playerCount >= 15
-                              ? 'border-neutral-800 bg-neutral-900 opacity-20'
-                              : 'border-neutral-700 bg-neutral-900'
-                          }`}
-                        >
-                          <Text className="text-xl font-bold text-white">+</Text>
-                        </PressableScale>
-                      </View>
-                    </View>
-
-                    {/* Imposters Counter */}
-                    <View className="flex-1 p-4">
-                      <Text className="text-[10px] font-mono uppercase text-blue-400 tracking-wider font-bold">
-                        IMPOSTERS
-                      </Text>
-                      <Text className="text-5xl font-black text-blue-500 my-1 tracking-tight">
-                        {imposterCount}
-                      </Text>
-                      <View className="flex-row gap-2 mt-2">
-                        <PressableScale
-                          onPress={() => setImposterCount(imposterCount - 1)}
-                          disabled={imposterCount <= 1}
-                          haptic="selection"
-                          activeScale={0.96}
-                          accessibilityRole="button"
-                          accessibilityLabel="Decrease imposters"
-                          className={`flex-1 h-12 border items-center justify-center ${
-                            imposterCount <= 1
-                              ? 'border-neutral-800 bg-neutral-900 opacity-20'
-                              : 'border-neutral-700 bg-neutral-900'
-                          }`}
-                        >
-                          <Text className="text-xl font-bold text-white">-</Text>
-                        </PressableScale>
-                        <PressableScale
-                          onPress={() => setImposterCount(imposterCount + 1)}
-                          disabled={isAtMaxImposters}
-                          haptic="selection"
-                          activeScale={0.96}
-                          accessibilityRole="button"
-                          accessibilityLabel="Increase imposters"
-                          className={`flex-1 h-12 border items-center justify-center ${
-                            isAtMaxImposters
-                              ? 'border-neutral-800 bg-neutral-900 opacity-20'
-                              : 'border-neutral-700 bg-neutral-900'
-                          }`}
-                        >
-                          <Text className="text-xl font-bold text-white">+</Text>
-                        </PressableScale>
-                      </View>
-                    </View>
-                  </View>
-
-                  {/* Parity Feedback Strip */}
-                  <View className="px-4 py-2 flex-row items-center justify-between bg-neutral-900/50">
-                    <Text className="text-[10px] font-mono text-neutral-400">
-                      PARITY: MIN (2×IMPOSTERS)+1
-                    </Text>
-                    <Text
-                      className={`text-[10px] font-mono font-bold ${
-                        isAtMaxImposters ? 'text-blue-400' : 'text-neutral-500'
-                      }`}
-                    >
-                      {isAtMaxImposters
-                        ? `MAX FOR ${playerCount} PLAYERS`
-                        : `UP TO ${maxImposters} ALLOWED`}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Players Roster */}
-                <View className="mb-6">
-                  <View className="flex-row items-center justify-between mb-2">
-                    <Text className="text-xs font-mono uppercase text-neutral-400 font-bold tracking-wider">
-                      ROSTER ({playerCount})
-                    </Text>
-                    <Text className="text-[10px] font-mono text-neutral-600 uppercase">
-                      SEATING ORDER
-                    </Text>
-                  </View>
-
-                  <Animated.View
-                    layout={reducedMotion ? undefined : LinearTransition.duration(180)}
-                    className="border-t border-b border-neutral-800 divide-y divide-neutral-800 bg-neutral-950"
-                  >
-                    {Array.from({ length: playerCount }).map((_, i) => {
-                      const currentValue = participantNames[i] ?? `Player ${i + 1}`;
-                      const isDefaultName = /^Player \d+$/.test(currentValue);
-
-                      return (
-                        <Animated.View
-                          key={i}
-                          entering={
-                            reducedMotion
-                              ? undefined
-                              : FadeInDown.duration(150).delay(Math.min(i * 35, 250))
-                          }
-                          layout={reducedMotion ? undefined : LinearTransition.duration(180)}
-                          className="flex-col bg-transparent"
-                        >
-                          <PressableScale
-                            onPress={() => setActivePlayerIndex(i)}
-                            activeScale={0.97}
-                            className="flex-row items-center min-h-[48px] px-3 gap-3 py-2"
-                          >
-                            <Text className="text-xs font-mono text-neutral-500 w-6">
-                              {String(i + 1).padStart(2, '0')}
-                            </Text>
-                            <Text className={`flex-1 text-sm font-medium ${isDefaultName ? 'text-neutral-500' : 'text-white'}`}>
-                              {currentValue}
-                            </Text>
-                          </PressableScale>
-                        </Animated.View>
-                      );
-                    })}
-                  </Animated.View>
-                </View>
-              </Animated.View>
-            ) : (
-              /* ================= PAGE 2: RULES & CATEGORY ================= */
-              <Animated.View
-                key="step-rules"
-                entering={
-                  reducedMotion
-                    ? undefined
-                    : FadeIn.duration(180).easing(EASE_OUT)
-                }
-              >
-                {/* Back to Players Link */}
-                <PressableScale
-                  onPress={() => setCurrentStep('landing')}
-                  haptic="light"
-                  accessibilityRole="button"
-                  accessibilityLabel="Back to roster"
-                  className="py-2 self-start mb-4 flex-row items-center gap-1 min-h-[44px]"
-                >
-                  <Text className="text-xs font-mono font-bold text-blue-400">
-                    ← BACK TO ROSTER
-                  </Text>
-                </PressableScale>
-
-                <View className="mb-6">
-                  <Text className="text-3xl font-black text-white tracking-tight">
-                    Game Rules
-                  </Text>
-                  <Text className="text-xs text-neutral-400 font-mono mt-0.5">
-                    {playerCount} Players • {imposterCount} Imposter{imposterCount > 1 ? 's' : ''}
-                  </Text>
-                </View>
-
-                {/* Game Mode Selector */}
-                <View className="mb-6" accessibilityRole="radiogroup">
-                  <Text className="text-xs font-mono uppercase text-neutral-400 font-bold mb-2">
-                    DEAL MODE
-                  </Text>
-                  <View className="border border-neutral-800 divide-y divide-neutral-800 bg-neutral-950">
-                    {MODES.map((m) => {
-                      const active = selectedMode === m.id;
-                      return (
-                        <PressableScale
-                          key={m.id}
-                          onPress={() => setSelectedMode(m.id)}
-                          haptic="selection"
-                          activeScale={0.98}
-                          accessibilityRole="radio"
-                          accessibilityState={{ checked: active }}
-                          accessibilityLabel={m.label}
-                          className={`p-4 flex-row items-center justify-between min-h-[56px] ${
-                            active ? 'bg-neutral-900' : 'bg-transparent'
-                          }`}
-                        >
-                          <View className="flex-1 pr-3">
-                            <Text
-                              className={`text-sm font-bold ${
-                                active ? 'text-blue-400' : 'text-neutral-200'
-                              }`}
-                            >
-                              {m.title}
-                            </Text>
-                            <Text className="text-xs text-neutral-400 mt-0.5 font-mono">
-                              {m.subtitle}
-                            </Text>
-                          </View>
-                          <View
-                            className={`w-4 h-4 rounded-full items-center justify-center ${
-                              active
-                                ? 'border border-blue-500 bg-blue-500'
-                                : 'border border-neutral-700'
-                            }`}
-                          >
-                            {active && <View className="w-1.5 h-1.5 rounded-full bg-black" />}
-                          </View>
-                        </PressableScale>
-                      );
-                    })}
-                  </View>
-                </View>
-
-                {/* Category Matrix */}
-                <View className="mb-6">
-                  <View className="flex-row items-center justify-between mb-2">
-                    <Text className="text-xs font-mono uppercase text-neutral-400 font-bold">
-                      CATEGORY
-                    </Text>
-                    <Text className="text-[10px] font-mono text-blue-400">
-                      840 MASTER PAIRS
-                    </Text>
-                  </View>
-
-                  {/* Featured All Categories Option */}
-                  <PressableScale
-                    onPress={() => setSelectedCategory('All Categories')}
-                    haptic="selection"
-                    activeScale={0.98}
-                    accessibilityRole="button"
-                    accessibilityLabel="All categories random deck"
-                    className={`p-4 mb-2 border flex-row items-center justify-between min-h-[56px] ${
-                      selectedCategory === 'All Categories'
-                        ? 'border-blue-500 bg-blue-600/10'
-                        : 'border-neutral-800 bg-neutral-950'
-                    }`}
-                  >
-                    <View>
-                      <Text
-                        className={`text-xs font-mono font-bold ${
-                          selectedCategory === 'All Categories' ? 'text-blue-400' : 'text-white'
-                        }`}
-                      >
-                        ALL CATEGORIES (RANDOM DECK)
-                      </Text>
-                      <Text className="text-[10px] font-mono text-neutral-500 mt-0.5">
-                        Pulls randomly across all 8 master categories
-                      </Text>
-                    </View>
-                    <Text className="text-xs font-mono font-bold text-neutral-400">
-                      840 PAIRS
-                    </Text>
-                  </PressableScale>
-
-                  {/* 8 Distinct Categories - meeting 48px touch targets */}
-                  <View className="flex-row flex-wrap gap-2">
-                    {CATEGORIES.map((cat) => {
-                      const active = selectedCategory === cat;
-                      return (
-                        <PressableScale
-                          key={cat}
-                          onPress={() => setSelectedCategory(cat)}
-                          haptic="selection"
-                          activeScale={0.96}
-                          accessibilityRole="button"
-                          accessibilityLabel={`${cat} category with 105 pairs`}
-                          className={`px-4 py-3 border min-h-[48px] items-center justify-center ${
-                            active
-                              ? 'border-blue-500 bg-blue-600/10'
-                              : 'border-neutral-800 bg-neutral-950'
-                          }`}
-                        >
-                          <Text
-                            className={`text-xs font-mono ${
-                              active ? 'text-blue-400 font-bold' : 'text-neutral-400'
-                            }`}
-                          >
-                            {cat}
-                          </Text>
-                        </PressableScale>
-                      );
-                    })}
-                  </View>
-                </View>
-              </Animated.View>
-            )}
-          </ScrollView>
-
-          {/* Sticky Bottom Action Bar with Safe Area Bottom Padding */}
           <View
-            style={{ paddingBottom: Math.max(insets.bottom, 16) }}
-            className="px-5 pt-3 border-t border-neutral-900 bg-black"
+            style={{
+              backgroundColor: COLORS.yellow,
+              paddingHorizontal: 10,
+              paddingVertical: 4,
+              borderRadius: BRUTAL.pill,
+              ...BRUTAL.border,
+              ...BRUTAL.shadowSm,
+            }}
           >
-            {currentStep === 'landing' ? (
-              <PressableScale
-                onPress={() => setCurrentStep('rules')}
-                haptic="medium"
-                activeScale={0.98}
-                accessibilityRole="button"
-                accessibilityLabel="Proceed to game rules and category"
-                className="w-full h-14 bg-white items-center justify-center"
-              >
-                <Text className="text-xs font-black text-black uppercase tracking-widest">
-                  GAME RULES & CATEGORY →
-                </Text>
-              </PressableScale>
-            ) : (
-              <PressableScale
-                onPress={() => {
-                  addNames(participantNames);
-                  startNewGame();
-                }}
-                haptic="medium"
-                activeScale={0.98}
-                accessibilityRole="button"
-                accessibilityLabel="Start game and begin secret deal"
-                className="w-full h-14 bg-white items-center justify-center"
-              >
-                <Text className="text-xs font-black text-black uppercase tracking-widest">
-                  START GAME →
-                </Text>
-              </PressableScale>
-            )}
+            <Text style={{ fontSize: 11, fontWeight: '800', color: COLORS.dark }}>pass & play</Text>
           </View>
         </View>
-      </KeyboardAvoidingView>
 
-      {/* Sheet rendered outside of main scrolling flow */}
-      <PlayerSelectionSheet
-        isVisible={activePlayerIndex !== null}
-        onClose={() => setActivePlayerIndex(null)}
-        initialValue={
-          activePlayerIndex !== null 
-            ? (participantNames[activePlayerIndex] ?? `Player ${activePlayerIndex + 1}`) 
-            : ''
-        }
-        onSelectName={(name) => {
-          if (activePlayerIndex !== null) {
-            setParticipantName(activePlayerIndex, name);
-          }
-        }}
-        recentNames={recentNames}
-        alreadySelectedNames={participantNames}
-      />
-    </>
+        {/* Magazine Tilted Hero Card */}
+        <View
+          style={{
+            backgroundColor: COLORS.surface,
+            borderRadius: BRUTAL.r,
+            padding: 20,
+            ...BRUTAL.border,
+            ...BRUTAL.shadowLg,
+            transform: [{ rotate: '-1.5deg' }],
+            marginBottom: 20,
+          }}
+        >
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <View
+              style={{
+                backgroundColor: COLORS.lavender,
+                paddingHorizontal: 8,
+                paddingVertical: 2,
+                borderRadius: BRUTAL.pill,
+                ...BRUTAL.border,
+              }}
+            >
+              <Text style={{ fontSize: 10, fontWeight: '800' }}>digital game master</Text>
+            </View>
+            <Text style={{ fontSize: 14, fontStyle: 'italic', fontWeight: '700', color: COLORS.coral }}>
+              it's game night! ✨
+            </Text>
+          </View>
+
+          <Text style={{ fontSize: 36, fontWeight: '900', lineHeight: 38, letterSpacing: -1, marginTop: 8, color: COLORS.dark }}>
+            room setup.
+          </Text>
+          <Text style={{ fontSize: 13, color: COLORS.textMuted, marginTop: 4, lineHeight: 18 }}>
+            balance players, choose your game mode, and pass the phone around.
+          </Text>
+        </View>
+
+        {/* Split Metric Counter Card */}
+        <View
+          style={{
+            backgroundColor: COLORS.surface,
+            borderRadius: BRUTAL.r,
+            padding: 16,
+            ...BRUTAL.border,
+            ...BRUTAL.shadow,
+            marginBottom: 12,
+          }}
+        >
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            {/* Players Counter */}
+            <View style={{ flex: 1, alignItems: 'center' }}>
+              <Text style={{ fontSize: 11, fontWeight: '800', textTransform: 'lowercase', color: COLORS.dark }}>
+                total players
+              </Text>
+              <Text style={{ fontSize: 48, fontWeight: '900', lineHeight: 52, marginVertical: 4, color: COLORS.dark }}>
+                {playerCount}
+              </Text>
+              <View style={{ flexDirection: 'row', gap: 8, width: '100%', justifyContent: 'center' }}>
+                <Pressable
+                  onPress={() => setPlayerCount(playerCount - 1)}
+                  disabled={playerCount <= 3}
+                  style={({ pressed }) => ({
+                    flex: 1,
+                    height: 40,
+                    backgroundColor: COLORS.surface,
+                    borderRadius: BRUTAL.r,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    ...BRUTAL.border,
+                    ...BRUTAL.shadowSm,
+                    opacity: playerCount <= 3 ? 0.3 : 1,
+                    transform: pressed ? [{ scale: 0.95 }] : [],
+                  })}
+                >
+                  <Text style={{ fontSize: 22, fontWeight: '900', color: COLORS.dark }}>−</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => setPlayerCount(playerCount + 1)}
+                  disabled={playerCount >= 15}
+                  style={({ pressed }) => ({
+                    flex: 1,
+                    height: 40,
+                    backgroundColor: COLORS.surface,
+                    borderRadius: BRUTAL.r,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    ...BRUTAL.border,
+                    ...BRUTAL.shadowSm,
+                    opacity: playerCount >= 15 ? 0.3 : 1,
+                    transform: pressed ? [{ scale: 0.95 }] : [],
+                  })}
+                >
+                  <Text style={{ fontSize: 22, fontWeight: '900', color: COLORS.dark }}>+</Text>
+                </Pressable>
+              </View>
+            </View>
+
+            {/* Vertical Divider */}
+            <View style={{ width: 2, backgroundColor: COLORS.border }} />
+
+            {/* Imposters Counter */}
+            <View style={{ flex: 1, alignItems: 'center' }}>
+              <Text style={{ fontSize: 11, fontWeight: '800', textTransform: 'lowercase', color: COLORS.coral }}>
+                imposters
+              </Text>
+              <Text style={{ fontSize: 48, fontWeight: '900', lineHeight: 52, marginVertical: 4, color: COLORS.coral }}>
+                {imposterCount}
+              </Text>
+              <View style={{ flexDirection: 'row', gap: 8, width: '100%', justifyContent: 'center' }}>
+                <Pressable
+                  onPress={() => setImposterCount(imposterCount - 1)}
+                  disabled={imposterCount <= 1}
+                  style={({ pressed }) => ({
+                    flex: 1,
+                    height: 40,
+                    backgroundColor: COLORS.pink,
+                    borderRadius: BRUTAL.r,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    ...BRUTAL.border,
+                    ...BRUTAL.shadowSm,
+                    opacity: imposterCount <= 1 ? 0.3 : 1,
+                    transform: pressed ? [{ scale: 0.95 }] : [],
+                  })}
+                >
+                  <Text style={{ fontSize: 22, fontWeight: '900', color: COLORS.dark }}>−</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => setImposterCount(imposterCount + 1)}
+                  disabled={isAtMaxImposters}
+                  style={({ pressed }) => ({
+                    flex: 1,
+                    height: 40,
+                    backgroundColor: COLORS.pink,
+                    borderRadius: BRUTAL.r,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    ...BRUTAL.border,
+                    ...BRUTAL.shadowSm,
+                    opacity: isAtMaxImposters ? 0.3 : 1,
+                    transform: pressed ? [{ scale: 0.95 }] : [],
+                  })}
+                >
+                  <Text style={{ fontSize: 22, fontWeight: '900', color: COLORS.dark }}>+</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Balancing Formula Pill */}
+        <View
+          style={{
+            backgroundColor: COLORS.yellow,
+            borderRadius: BRUTAL.pill,
+            paddingVertical: 8,
+            paddingHorizontal: 14,
+            ...BRUTAL.border,
+            ...BRUTAL.shadowSm,
+            alignItems: 'center',
+            marginBottom: 20,
+          }}
+        >
+          <Text style={{ fontSize: 11, fontWeight: '800', color: COLORS.dark }}>
+            (2 × {imposterCount}) + 1 = <Text style={{ fontWeight: '900' }}>{minRequired}</Text> min players ✓ balanced
+          </Text>
+        </View>
+
+        {/* Seating Order Roster */}
+        <View style={{ marginBottom: 20 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <Text style={{ fontSize: 13, fontWeight: '800', color: COLORS.dark }}>
+              passing order (roster):
+            </Text>
+            <Text style={{ fontSize: 11, fontWeight: '600', color: COLORS.textMuted }}>
+              tap to rename
+            </Text>
+          </View>
+
+          <View style={{ gap: 6 }}>
+            {participantNames.slice(0, playerCount).map((name, i) => (
+              <View
+                key={`seat_${i}`}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: COLORS.surface,
+                  borderRadius: BRUTAL.r,
+                  paddingHorizontal: 12,
+                  paddingVertical: 8,
+                  gap: 10,
+                  ...BRUTAL.border,
+                  transform: [{ rotate: i % 2 === 0 ? '-0.4deg' : '0.4deg' }],
+                }}
+              >
+                <View
+                  style={{
+                    width: 24,
+                    height: 24,
+                    borderRadius: 12,
+                    backgroundColor: COLORS.lavender,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    ...BRUTAL.border,
+                  }}
+                >
+                  <Text style={{ fontSize: 11, fontWeight: '800' }}>{i + 1}</Text>
+                </View>
+
+                <TextInput
+                  value={name}
+                  onChangeText={(val) => setParticipantName(i, val)}
+                  placeholder={`Player ${i + 1}`}
+                  placeholderTextColor="#999"
+                  maxLength={18}
+                  style={{
+                    flex: 1,
+                    fontSize: 14,
+                    fontWeight: '700',
+                    color: COLORS.dark,
+                    padding: 0,
+                  }}
+                />
+
+                <Text style={{ fontSize: 10, fontWeight: '700', color: COLORS.textMuted }}>
+                  seat {i + 1}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Game Mode Selection */}
+        <View style={{ marginBottom: 20 }}>
+          <Text style={{ fontSize: 13, fontWeight: '800', color: COLORS.dark, marginBottom: 8 }}>
+            select game mode:
+          </Text>
+
+          <View style={{ gap: 8 }}>
+            {MODES.map((m) => {
+              const isSelected = selectedMode === m.id;
+              return (
+                <Pressable
+                  key={m.id}
+                  onPress={() => setSelectedMode(m.id)}
+                  style={({ pressed }) => ({
+                    backgroundColor: isSelected ? COLORS.yellow : COLORS.surface,
+                    borderRadius: BRUTAL.r,
+                    padding: 14,
+                    ...BRUTAL.border,
+                    ...(isSelected ? BRUTAL.shadowLg : BRUTAL.shadow),
+                    transform: pressed ? [{ scale: 0.98 }] : [],
+                  })}
+                >
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={{ fontSize: 14, fontWeight: '800', color: COLORS.dark }}>
+                      {m.title}
+                    </Text>
+                    {isSelected && (
+                      <View
+                        style={{
+                          backgroundColor: COLORS.coral,
+                          paddingHorizontal: 8,
+                          paddingVertical: 2,
+                          borderRadius: BRUTAL.pill,
+                          ...BRUTAL.border,
+                        }}
+                      >
+                        <Text style={{ fontSize: 10, fontWeight: '800', color: '#fff' }}>active</Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={{ fontSize: 11, color: COLORS.textMuted, marginTop: 4, lineHeight: 15 }}>
+                    {m.subtitle}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* Category Chips */}
+        <View style={{ marginBottom: 24 }}>
+          <Text style={{ fontSize: 13, fontWeight: '800', color: COLORS.dark, marginBottom: 8 }}>
+            pick a category:
+          </Text>
+
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+            {CATEGORIES.map((cat) => {
+              const isSelected = selectedCategory === cat;
+              return (
+                <Pressable
+                  key={cat}
+                  onPress={() => setSelectedCategory(cat)}
+                  style={({ pressed }) => ({
+                    backgroundColor: isSelected ? COLORS.teal : COLORS.surface,
+                    borderRadius: BRUTAL.r,
+                    paddingHorizontal: 12,
+                    paddingVertical: 8,
+                    ...BRUTAL.border,
+                    ...BRUTAL.shadowSm,
+                    transform: pressed ? [{ scale: 0.95 }] : [],
+                  })}
+                >
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      fontWeight: '800',
+                      color: isSelected ? '#fff' : COLORS.dark,
+                    }}
+                  >
+                    {cat}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* Start Game Deal CTA Button */}
+        <Pressable
+          onPress={() => startNewGame()}
+          style={({ pressed }) => ({
+            backgroundColor: COLORS.coral,
+            borderRadius: BRUTAL.rLg,
+            paddingVertical: 18,
+            paddingHorizontal: 22,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            ...BRUTAL.borderThick,
+            ...BRUTAL.shadowLg,
+            transform: pressed ? [{ translateX: 3 }, { translateY: 3 }] : [],
+          })}
+        >
+          <Text style={{ fontSize: 17, fontWeight: '900', color: '#fff', letterSpacing: -0.3 }}>
+            DEAL SECRET ROLES
+          </Text>
+          <Text style={{ fontSize: 22, fontWeight: '900', color: '#fff' }}>→</Text>
+        </Pressable>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
