@@ -234,7 +234,7 @@ export const PlayerSelectionSheet: React.FC<PlayerSelectionSheetProps> = ({
           <Animated.ScrollView
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40 }}
-            itemLayoutAnimation={ROW_CLOSE}
+            
           >
             {showAddNew && (
               <Animated.View layout={ROW_CLOSE}>
