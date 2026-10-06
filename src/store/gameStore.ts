@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { GameMode, GameCategory, Player, GamePhase, Winner, WordEntry } from '../types/game';
 import wordsData from '../data/imposter_words.json';
+import { usePlayerHistoryStore } from './usePlayerHistoryStore';
 
 export const CATEGORIES: GameCategory[] = [
   'Concepts & Weather',
@@ -46,8 +47,10 @@ interface GameState {
   finishRevealAndStartDiscussion: () => void;
   eliminatePlayer: (playerId: string) => void;
   clearLastEliminated: () => void;
+  skipRound: () => void;
   resetGameKeepSetup: () => void;
   backToSetup: () => void;
+  resetForNewGroup: () => void;
 }
 
 // Helpers
@@ -71,7 +74,7 @@ const DEFAULT_NAMES = [
 ];
 
 export const useGameStore = create<GameState>((set, get) => ({
-  playerCount: 8,
+  playerCount: 5,
   imposterCount: 1,
   participantNames: [...DEFAULT_NAMES],
   selectedMode: 'everyone_gets_word',
@@ -154,7 +157,11 @@ export const useGameStore = create<GameState>((set, get) => ({
     // 2. Select imposters randomly
     const playerIndices = Array.from({ length: playerCount }, (_, i) => i);
     // Shuffle indices to pick imposters
-    const shuffled = [...playerIndices].sort(() => Math.random() - 0.5);
+    const shuffled = [...playerIndices];
+    for (let index = shuffled.length - 1; index > 0; index--) {
+      const other = Math.floor(Math.random() * (index + 1));
+      [shuffled[index], shuffled[other]] = [shuffled[other], shuffled[index]];
+    }
     const imposterIndicesSet = new Set(shuffled.slice(0, imposterCount));
 
     // 3. Build player list in entered order
@@ -188,6 +195,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     // 4. Randomly pick a discussion starter from ALL players
     const starterIndex = Math.floor(Math.random() * playerCount);
     const starterId = builtPlayers[starterIndex].id;
+    usePlayerHistoryStore.getState().addNames(builtPlayers.map((player) => player.name));
 
     set({
       phase: 'reveal',
@@ -230,27 +238,28 @@ export const useGameStore = create<GameState>((set, get) => ({
     const activeImposters = updated.filter((p) => !p.isEliminated && p.role === 'imposter').length;
 
     let newWinner: Winner = null;
-    let newPhase = get().phase;
-
     if (activeImposters === 0) {
       newWinner = 'citizens';
-      newPhase = 'game_over';
     } else if (activeImposters >= activeCitizens) {
       newWinner = 'imposters';
-      newPhase = 'game_over';
     }
 
     set({
       players: updated,
       winner: newWinner,
-      phase: newPhase,
       lastEliminatedPlayer: eliminated,
     });
   },
 
   clearLastEliminated: () => {
-    set({ lastEliminatedPlayer: null });
+    set((state) => ({
+      lastEliminatedPlayer: null,
+      phase: state.winner ? 'game_over' : 'discussion',
+      roundNumber: state.winner ? state.roundNumber : state.roundNumber + 1,
+    }));
   },
+
+  skipRound: () => set((state) => ({ roundNumber: state.roundNumber + 1 })),
 
   resetGameKeepSetup: () => {
     // Retains participantNames, playerCount, imposterCount, selectedMode, selectedCategory
@@ -266,6 +275,16 @@ export const useGameStore = create<GameState>((set, get) => ({
       discussionStarterId: null,
       activeWordEntry: null,
       lastEliminatedPlayer: null,
+      roundNumber: 1,
+    });
+  },
+
+  resetForNewGroup: () => {
+    set({
+      phase: 'setup', playerCount: 5, imposterCount: 1,
+      participantNames: Array.from({ length: 5 }, (_, index) => `Player ${index + 1}`),
+      players: [], winner: null, discussionStarterId: null, activeWordEntry: null,
+      currentRevealIndex: 0, roundNumber: 1, lastEliminatedPlayer: null,
     });
   },
 }));

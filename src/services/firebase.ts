@@ -1,13 +1,5 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import {
-  initializeAuth,
-  getAuth,
-  GoogleAuthProvider,
-  Auth,
-} from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
-import { Platform } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY || 'AIzaSyDu6aw3hd4gixWk2raESuuShqkS4Y4kwLM',
@@ -24,38 +16,4 @@ export const app: FirebaseApp = getApps().length === 0
   ? initializeApp(firebaseConfig)
   : getApp();
 
-// Initialize Auth with cross-platform persistence
-let authInstance: Auth;
-
-if (Platform.OS === 'web') {
-  authInstance = getAuth(app);
-} else {
-  try {
-    const authModule = require('firebase/auth');
-    const persistenceFn = authModule.getReactNativePersistence;
-    if (persistenceFn) {
-      authInstance = initializeAuth(app, {
-        persistence: persistenceFn(AsyncStorage),
-      });
-    } else {
-      authInstance = getAuth(app);
-    }
-  } catch {
-    try {
-      authInstance = getAuth(app);
-    } catch {
-      authInstance = initializeAuth(app);
-    }
-  }
-}
-
-export const auth = authInstance;
 export const db: Firestore = getFirestore(app);
-export const googleProvider = new GoogleAuthProvider();
-
-// Standard scopes for user profile and identity
-googleProvider.addScope('profile');
-googleProvider.addScope('email');
-googleProvider.setCustomParameters({
-  prompt: 'select_account',
-});

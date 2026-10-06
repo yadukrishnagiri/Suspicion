@@ -1,21 +1,19 @@
 import "../global.css";
-import { Platform } from "react-native";
-import { StyleSheet } from "react-native-css-interop";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { COLORS } from "@/constants/theme";
+import { LEDGER } from "@/components/live/LedgerFlow";
 
 export default function RootLayout() {
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: COLORS.bg }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: LEDGER.bg }}>
       <SafeAreaProvider>
-        <StatusBar style="dark" />
+        <StatusBar style="light" />
         <Stack
           screenOptions={{
             headerShown: false,
-            contentStyle: { backgroundColor: COLORS.bg },
+            contentStyle: { backgroundColor: LEDGER.bg },
           }}
         />
       </SafeAreaProvider>

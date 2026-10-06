@@ -180,35 +180,6 @@ The game’s content engine is powered by an Excel database (`imposter_master_da
 | Enforcing win/loss parity conditions | Determining house rules on speaking limits |
 | Keeping word secrets safe after elimination | Celebrating victories and laughing over bluffs |
 
----
+## 7. Account & Local Data
 
-## 7. Master Prompt for Project Development
-
-Use the block below as the starting prompt for any development team, AI agent, or designer:
-
-```text
-Build an in-person, pass-and-play social deduction mobile game called "Suspicion" (The Imposter Game Master). 
-The app acts strictly as an offline game master and secret dealer—no online multiplayer servers, point systems, 
-leaderboards, or automated voting timers.
-
-Core Rules & Mechanics:
-1. Player Range: 3 to 15 players, with 1 to 7 imposters. Enforce the balancing formula:
-   Minimum Players = (2 * Imposters) + 1. Prevent invalid setups.
-2. Three Game Modes:
-   - Mode 1 (Word vs Word): Citizens get Main Word; Imposter gets related Imposter Word.
-   - Mode 2 (Word vs Hint): Citizens get Main Word; Imposter gets an indirect contextual hint.
-   - Mode 3 (Blind Imposter): Citizens get Main Word; Imposter receives nothing.
-3. Workflow & UX:
-   - Setup: Player count, imposter count, ordered player names (persisted across games), mode, and category.
-   - Private Reveal: Sequential pass-the-phone cards in exact entered order with tap-to-reveal and tap-to-hide.
-   - Discussion: Randomly pick ONE discussion starter who remains the starter for the entire match.
-   - Real-World Play: Players give 1 spoken word each; debate and vote happen in person.
-   - Elimination: Tap accused player card -> reveals role ("NOT THE IMPOSTOR" or "IMPOSTOR FOUND").
-     CRITICAL: Secret words are NEVER revealed on elimination.
-   - Win Evaluation: Citizens win when all imposters are eliminated. Imposters win when active imposters >= active citizens.
-   - Rematch: 1-tap "New Game" resets active states, draws new words, and keeps player names.
-4. Content Engine:
-   Powered by an 11-column dataset (ID, Category, Main Word, Imposter Word, Imposter Category, 
-   Relationship Type, Imposter Hint, Difficulty, Pair Group, Pattern Risk, Vocabulary Level) 
-   across 8 party categories with carefully curated, non-synonym word associations and indirect hints.
-```
+Suspicion does not require a login or account. The app runs as a local, in-person pass-and-play game. Player-name suggestions are stored on the device so the group can reuse names; there are no player profiles or online multiplayer accounts.
