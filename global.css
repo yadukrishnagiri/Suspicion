@@ -1,3 +1,11 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+html, body, #root { background-color: #201321; }
+::selection { background-color: #C9A66E; color: #201321; }
+*:focus-visible { outline: 2px solid #C9A66E; outline-offset: 3px; }
+input { caret-color: #BD3D2F; }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #201321; }
+::-webkit-scrollbar-thumb { background: #59435A; border-radius: 3px; }
