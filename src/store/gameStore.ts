@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { GameMode, GameCategory, Player, GamePhase, Winner, WordEntry } from '../types/game';
-import wordsData from '../data/imposter_words.json';
+import { getCategoryWords } from '../services/wordService';
 import { usePlayerHistoryStore } from './usePlayerHistoryStore';
 
 export const CATEGORIES: GameCategory[] = [
@@ -30,6 +30,7 @@ interface GameState {
   currentRevealIndex: number;
   winner: Winner;
   roundNumber: number;
+  isLoadingWords: boolean;
 
   // Elimination modal/status state
   lastEliminatedPlayer: Player | null;
@@ -42,7 +43,7 @@ interface GameState {
   setSelectedMode: (mode: GameMode) => void;
   setSelectedCategory: (cat: GameCategory) => void;
 
-  startNewGame: () => void;
+  startNewGame: () => Promise<void>;
   nextReveal: () => void;
   finishRevealAndStartDiscussion: () => void;
   eliminatePlayer: (playerId: string) => void;
@@ -87,6 +88,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   currentRevealIndex: 0,
   winner: null,
   roundNumber: 1,
+  isLoadingWords: false,
   lastEliminatedPlayer: null,
 
   setPlayerCount: (count: number) => {
@@ -137,7 +139,10 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ selectedCategory: category });
   },
 
-  startNewGame: () => {
+  startNewGame: async () => {
+    if (get().isLoadingWords) return;
+    set({ isLoadingWords: true });
+
     const {
       playerCount,
       imposterCount,
@@ -147,66 +152,61 @@ export const useGameStore = create<GameState>((set, get) => ({
     } = get();
 
     // 1. Pick a random word from category
-    const categoryWords = (wordsData as WordEntry[]).filter(
-      (w) => w.category.toLowerCase() === selectedCategory.toLowerCase()
-    );
-    const wordPool = categoryWords.length > 0 ? categoryWords : (wordsData as WordEntry[]);
-    const randomIndex = Math.floor(Math.random() * wordPool.length);
-    const chosenWordEntry = wordPool[randomIndex];
+    try {
+      const wordPool = await getCategoryWords(selectedCategory);
+      const randomIndex = Math.floor(Math.random() * wordPool.length);
+      const chosenWordEntry = wordPool[randomIndex];
 
-    // 2. Select imposters randomly
-    const playerIndices = Array.from({ length: playerCount }, (_, i) => i);
-    // Shuffle indices to pick imposters
-    const shuffled = [...playerIndices];
-    for (let index = shuffled.length - 1; index > 0; index--) {
-      const other = Math.floor(Math.random() * (index + 1));
-      [shuffled[index], shuffled[other]] = [shuffled[other], shuffled[index]];
-    }
-    const imposterIndicesSet = new Set(shuffled.slice(0, imposterCount));
+      // 2. Select imposters randomly
+      const playerIndices = Array.from({ length: playerCount }, (_, i) => i);
+      const shuffled = [...playerIndices];
+      for (let index = shuffled.length - 1; index > 0; index--) {
+        const other = Math.floor(Math.random() * (index + 1));
+        [shuffled[index], shuffled[other]] = [shuffled[other], shuffled[index]];
+      }
+      const imposterIndicesSet = new Set(shuffled.slice(0, imposterCount));
 
-    // 3. Build player list in entered order
-    const builtPlayers: Player[] = participantNames.slice(0, playerCount).map((name, idx) => {
-      const isImposter = imposterIndicesSet.has(idx);
-      const role = isImposter ? 'imposter' : 'citizen';
+      // 3. Build player list in entered order
+      const builtPlayers: Player[] = participantNames.slice(0, playerCount).map((name, idx) => {
+        const isImposter = imposterIndicesSet.has(idx);
+        const role = isImposter ? 'imposter' : 'citizen';
 
-      let assigned = '';
-      if (!isImposter) {
-        assigned = chosenWordEntry.mainWord;
-      } else {
-        if (selectedMode === 'everyone_gets_word') {
+        let assigned = '';
+        if (!isImposter) {
+          assigned = chosenWordEntry.mainWord;
+        } else if (selectedMode === 'everyone_gets_word') {
           assigned = chosenWordEntry.imposterWord;
         } else if (selectedMode === 'imposter_gets_clue') {
           assigned = chosenWordEntry.imposterHint || 'Look around carefully';
-        } else {
-          // Blind Imposter
-          assigned = '';
         }
-      }
 
-      return {
-        id: `player_${idx}`,
-        name: name.trim() || `Player ${idx + 1}`,
-        role,
-        isEliminated: false,
-        assignedWordOrHint: assigned,
-      };
-    });
+        return {
+          id: `player_${idx}`,
+          name: name.trim() || `Player ${idx + 1}`,
+          role,
+          isEliminated: false,
+          assignedWordOrHint: assigned,
+        };
+      });
 
-    // 4. Randomly pick a discussion starter from ALL players
-    const starterIndex = Math.floor(Math.random() * playerCount);
-    const starterId = builtPlayers[starterIndex].id;
-    usePlayerHistoryStore.getState().addNames(builtPlayers.map((player) => player.name));
+      // 4. Randomly pick a discussion starter from ALL players
+      const starterIndex = Math.floor(Math.random() * playerCount);
+      const starterId = builtPlayers[starterIndex].id;
+      usePlayerHistoryStore.getState().addNames(builtPlayers.map((player) => player.name));
 
-    set({
-      phase: 'reveal',
-      players: builtPlayers,
-      activeWordEntry: chosenWordEntry,
-      discussionStarterId: starterId,
-      currentRevealIndex: 0,
-      winner: null,
-      roundNumber: 1,
-      lastEliminatedPlayer: null,
-    });
+      set({
+        phase: 'reveal',
+        players: builtPlayers,
+        activeWordEntry: chosenWordEntry,
+        discussionStarterId: starterId,
+        currentRevealIndex: 0,
+        winner: null,
+        roundNumber: 1,
+        lastEliminatedPlayer: null,
+      });
+    } finally {
+      set({ isLoadingWords: false });
+    }
   },
 
   nextReveal: () => {

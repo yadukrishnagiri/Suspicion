@@ -1,7 +1,7 @@
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import { WordEntry, GameCategory } from '@/types/game';
-import localWords from '@/data/imposter_words.json';
+import { CONTENT_DATABASE_INFO, getWordPool, WORD_DATABASE } from '@/data/contentDatabase';
 
 function categoryToSlug(category: string): string {
   return category
@@ -15,13 +15,23 @@ function categoryToSlug(category: string): string {
 // In-memory cache for word packs fetched from Firestore
 const packCache: Record<string, WordEntry[]> = {};
 
+function isWordEntry(value: unknown): value is WordEntry {
+  if (!value || typeof value !== 'object') return false;
+  const entry = value as Partial<WordEntry>;
+  return typeof entry.id === 'number'
+    && typeof entry.category === 'string'
+    && typeof entry.mainWord === 'string'
+    && typeof entry.imposterWord === 'string'
+    && typeof entry.imposterHint === 'string';
+}
+
 /**
  * Fetch a category pack from Cloud Firestore with offline fallback
  * Cost: Exactly 1 document read per category fetch
  */
 export async function getCategoryWords(category: GameCategory): Promise<WordEntry[]> {
   if (category === 'All Categories') {
-    return localWords as WordEntry[];
+    return WORD_DATABASE;
   }
 
   const slug = categoryToSlug(category);
@@ -38,8 +48,9 @@ export async function getCategoryWords(category: GameCategory): Promise<WordEntr
 
     if (docSnap.exists()) {
       const data = docSnap.data();
-      if (Array.isArray(data.pairs) && data.pairs.length > 0) {
-        packCache[slug] = data.pairs as WordEntry[];
+      const matchesWorkbook = data.sourceSha256 === CONTENT_DATABASE_INFO.sourceSha256;
+      if (matchesWorkbook && Array.isArray(data.pairs) && data.pairs.length > 0 && data.pairs.every(isWordEntry)) {
+        packCache[slug] = data.pairs;
         return packCache[slug];
       }
     }
@@ -48,7 +59,7 @@ export async function getCategoryWords(category: GameCategory): Promise<WordEntr
   }
 
   // 3. Fallback to local offline dataset
-  const filtered = (localWords as WordEntry[]).filter((w) => w.category === category);
+  const filtered = getWordPool(category);
   packCache[slug] = filtered;
   return filtered;
 }

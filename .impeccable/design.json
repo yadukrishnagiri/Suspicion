@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-07T20:24:03+05:30",
+  "title": "Design System: Suspicion — Backstage Masquerade",
+  "extensions": {
+    "colorMeta": {
+      "stage-ink": { "role": "neutral", "displayName": "Stage ink", "canonical": "#201321", "tonalRamp": ["#100A11", "#201321", "#38243B", "#59435A", "#866D86", "#BAAAB8", "#E7DDE6", "#FAF5FA"] },
+      "action-vermilion": { "role": "primary", "displayName": "Action vermilion", "canonical": "#BD3D2F", "tonalRamp": ["#45120E", "#702018", "#A33026", "#BD3D2F", "#D66A5D", "#E69B91", "#F1C8C2", "#FBE9E6"] },
+      "invitation-ivory": { "role": "neutral", "displayName": "Invitation ivory", "canonical": "#F5EBDC", "tonalRamp": ["#352D23", "#564938", "#776954", "#998977", "#B8A993", "#D3C5B1", "#E7DAC8", "#F5EBDC"] },
+      "curtain-brass": { "role": "secondary", "displayName": "Curtain brass", "canonical": "#C9A66E", "tonalRamp": ["#3B2D1A", "#5A4428", "#7A5E38", "#9B7B4B", "#C9A66E", "#DCC196", "#ECDCBF", "#F8F0E0"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Cormorant display", "purpose": "Short expressive headings and the wordmark." },
+      "body": { "displayName": "DM Sans body", "purpose": "Instructions and player information." }
+    },
+    "shadows": [],
+    "motion": [
+      { "name": "press", "value": "100ms", "purpose": "Primary-action contraction and recovery." },
+      { "name": "page", "value": "220ms", "purpose": "Quiet page fade." },
+      { "name": "hold-threshold", "value": "320ms", "purpose": "Minimum private-card hold before reveal." },
+      { "name": "curtain", "value": "220ms", "purpose": "Cover opening during a sustained hold; concealment is immediate." },
+      { "name": "scene", "value": "700ms", "purpose": "Mask and wing entrance on welcome/outcomes." }
+    ],
+    "breakpoints": [
+      { "name": "narrow-phone", "value": "350px" },
+      { "name": "single-column-categories", "value": "380px" },
+      { "name": "browser-content", "value": "520px max-width" }
+    ]
+  },
+  "components": [
+    { "name": "Stage action", "kind": "button", "refersTo": "primary-action", "description": "The single dominant next step on each screen.", "html": "<button class=\"ds-stage-action\">LET THE SHOW BEGIN →</button>", "css": ".ds-stage-action{background:#BD3D2F;color:#F5EBDC;border:2px solid transparent;border-radius:12px;padding:15px 20px;min-height:60px;font:700 16px/1.44 sans-serif;cursor:pointer;transition:transform .1s,background-color .1s}.ds-stage-action:hover{background:#A33026}.ds-stage-action:active{transform:scale(.98)}.ds-stage-action:focus-visible{outline:2px solid #C9A66E;outline-offset:3px}" },
+    { "name": "Secondary stage action", "kind": "button", "refersTo": "secondary-action", "description": "A quiet alternate action.", "html": "<button class=\"ds-stage-secondary\">ANOTHER CLUE ROUND →</button>", "css": ".ds-stage-secondary{background:#2D1C2F;color:#F5EBDC;border:2px solid #59435A;border-radius:12px;padding:15px 20px;min-height:60px;font:700 16px/1.44 sans-serif;cursor:pointer}.ds-stage-secondary:hover{background:#49303E}.ds-stage-secondary:focus-visible{outline:2px solid #C9A66E;outline-offset:3px}" },
+    { "name": "Casting name", "kind": "input", "description": "A name line inside the ivory casting sheet.", "html": "<input class=\"ds-casting-name\" value=\"Player 1\" aria-label=\"Player 1 name\">", "css": ".ds-casting-name{background:#F5EBDC;color:#302333;border:0;border-bottom:1px solid #B8A993;border-radius:0;padding:12px;font:500 17px/1.4 sans-serif;min-height:56px}.ds-casting-name:focus-visible{outline:0;border-bottom:2px solid #BD3D2F;caret-color:#BD3D2F}" },
+    { "name": "Private invitation", "kind": "custom", "refersTo": "private-invitation", "description": "The held paper surface carrying the concealed role.", "html": "<button class=\"ds-invitation\">TOUCH & HOLD THIS CARD</button>", "css": ".ds-invitation{display:block;width:100%;min-height:330px;background:#F5EBDC;color:#302333;border:2px solid #F5EBDC;border-radius:16px;padding:24px;font:700 16px/1.4 sans-serif;cursor:pointer}.ds-invitation:focus-visible{border-color:#C9A66E;outline:0}" }
+  ],
+  "narrative": {
+    "northStar": "The Backstage Invitation",
+    "overview": "The shared phone is a stage object passed between friends. Dark plum supports evening play, while ivory casting sheets and invitations feel like physical paper. Paired masks provide the theatrical identity around readable game information.",
+    "keyCharacteristics": ["Expressive serif display with clear sans-serif controls", "One original illustration family", "Quiet setup and discussion, theatrical reveal and verdict"],
+    "rules": [
+      { "name": "The Rare Brass Rule", "body": "Brass guides attention to an active state or theatrical detail.", "section": "colors" },
+      { "name": "The Legible Secret Rule", "body": "Role and word remain live text on the private paper surface and disappear immediately on release.", "section": "typography" }
+    ],
+    "dos": ["Keep secret text on ivory with immediate conditional removal.", "Use native safe areas and honor reduced motion."],
+    "donts": ["Replace artwork with gradients or generic card grids.", "Display a word in an elimination report."]
+  }
+}

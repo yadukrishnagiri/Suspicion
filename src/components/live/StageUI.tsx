@@ -7,6 +7,7 @@ import { MOTION, STAGE, TYPE } from './masqueradeTheme';
 
 export const EASE = Easing.bezier(0.23, 1, 0.32, 1);
 export const MASK_ART = require('../../../assets/masquerade/masks.png');
+export const STAGE_FRAME_ART = require('../../../assets/masquerade/stage-curtains.png');
 // Inline native press-state styles must not pass through NativeWind's CSS
 // interop. Its native wrapper drops function-valued styles in this setup.
 export const Pressable = React.forwardRef<React.ComponentRef<typeof NativePressable>, React.ComponentProps<typeof NativePressable>>(
@@ -60,26 +61,21 @@ export function Navigation({ back, backLabel, position }: { back?: () => void; b
   </View>;
 }
 
-export function StageArt({ small = false, outcome = false }: { small?: boolean; outcome?: boolean }) {
+export function StageArt({ small = false, outcome = false, victory }: { small?: boolean; outcome?: boolean; victory?: 'citizens' | 'imposters' }) {
   const reduced = useReducedMotion();
   const reveal = useSharedValue(reduced ? 1 : 0);
   useEffect(() => { reveal.value = reduced ? 1 : withTiming(1, { duration: MOTION.scene, easing: EASE }); }, [reduced, reveal]);
   const artStyle = useAnimatedStyle(() => ({ opacity: 0.5 + reveal.value * 0.5, transform: [{ translateY: (1 - reveal.value) * 24 }, { rotate: `${(1 - reveal.value) * -5}deg` }, { scale: 0.9 + reveal.value * 0.1 }] }));
-  const leftStyle = useAnimatedStyle(() => ({ transform: [{ translateX: -reveal.value * 30 }] }));
-  const rightStyle = useAnimatedStyle(() => ({ transform: [{ translateX: reveal.value * 30 }] }));
   const height = small ? 168 : 292;
   return <View accessible={false} importantForAccessibility="no-hide-descendants" style={{ alignItems: 'center', height, width: '100%', marginVertical: small ? 8 : 20 }}>
-    {!small && <View style={{ position: 'absolute', top: 8, bottom: 12, width: '88%', maxWidth: 320, borderTopLeftRadius: 170, borderTopRightRadius: 170, borderWidth: 1, borderColor: '#76586C', backgroundColor: STAGE.raised, overflow: 'hidden' }}>
-      <View style={{ position: 'absolute', top: 12, right: 12, bottom: 0, left: 12, borderTopLeftRadius: 150, borderTopRightRadius: 150, borderWidth: 1, borderColor: '#493449' }} />
-      <Animated.View style={[styles.stageWing, { left: -18 }, leftStyle]} /><Animated.View style={[styles.stageWing, { right: -18 }, rightStyle]} />
-    </View>}
-    <Animated.View style={[{ width: small ? 184 : '100%', maxWidth: 360, height }, artStyle]}><Image source={MASK_ART} resizeMode="contain" style={{ width: '100%', height: '100%', transform: [{ rotate: outcome ? '7deg' : '0deg' }] }} /></Animated.View>
-    {!small && <View style={{ height: 1, width: '96%', backgroundColor: STAGE.brass, opacity: 0.55, position: 'absolute', bottom: 10 }} />}
+    {victory === 'citizens' && <View style={{ position: 'absolute', top: 5, width: 194, height: 150, borderTopLeftRadius: 110, borderTopRightRadius: 110, borderWidth: 1, borderBottomWidth: 0, borderColor: STAGE.brass, opacity: 0.7 }} />}
+    {victory === 'imposters' && <><View style={{ position: 'absolute', top: 18, left: '16%', width: 34, height: 128, borderRadius: 17, backgroundColor: '#582536', transform: [{ rotate: '-16deg' }] }} /><View style={{ position: 'absolute', top: 18, right: '16%', width: 34, height: 128, borderRadius: 17, backgroundColor: '#582536', transform: [{ rotate: '16deg' }] }} /></>}
+    {!small && <Image source={STAGE_FRAME_ART} resizeMode="contain" style={{ position: 'absolute', width: '100%', maxWidth: 380, height: '100%' }} />}
+    <Animated.View style={[{ width: small ? victory === 'imposters' ? 218 : 184 : '100%', maxWidth: small ? 360 : 330, height }, artStyle]}><Image source={MASK_ART} resizeMode="contain" style={{ width: '100%', height: '100%', transform: small ? [{ rotate: victory === 'imposters' ? '12deg' : outcome ? '7deg' : '0deg' }] : [{ scale: 0.85 }, { translateY: 26 }] }} /></Animated.View>
   </View>;
 }
 
 const styles = StyleSheet.create({
   action: { minHeight: 60, borderRadius: 12, borderCurve: 'continuous', paddingHorizontal: 20, paddingVertical: 15, flexDirection: 'row', alignItems: 'center', gap: 16, borderWidth: 2 },
   actionTitle: { fontFamily: TYPE.bold, color: STAGE.text, fontSize: 16, lineHeight: 23 },
-  stageWing: { position: 'absolute', top: 0, bottom: 0, width: 46, backgroundColor: '#492336', borderRadius: 24 },
 });

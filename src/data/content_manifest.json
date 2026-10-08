@@ -1,0 +1,16 @@
+{
+  "sourceFile": "outputs/suspicion-content-rewrite/imposter_game_master_dataset_v5_relatable.xlsx",
+  "sourceSheet": "MASTER DATASET",
+  "sourceSha256": "3aea50e5b49f08572b391e7b90e34b3f0235cd9456afe12ccfe00cb7e269c557",
+  "recordCount": 840,
+  "categoryCounts": {
+    "Concepts & Weather": 105,
+    "Food & Drinks": 105,
+    "Animals & Nature": 105,
+    "Everyday Objects": 105,
+    "Places & Travel": 105,
+    "Sports & Activities": 105,
+    "Occupations": 105,
+    "Pop Culture & Media": 105
+  }
+}

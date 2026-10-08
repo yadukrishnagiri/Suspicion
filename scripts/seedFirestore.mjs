@@ -42,6 +42,17 @@ async function seed() {
 
   const raw = fs.readFileSync(jsonPath, 'utf8');
   const words = JSON.parse(raw);
+  const manifestPath = path.resolve(__dirname, '../src/data/content_manifest.json');
+  if (!fs.existsSync(manifestPath)) {
+    console.error(`Error: Content manifest not found at ${manifestPath}. Run npm run sync:content first.`);
+    process.exit(1);
+  }
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+
+  if (words.length !== manifest.recordCount) {
+    console.error(`Error: Dataset has ${words.length} records but the manifest expects ${manifest.recordCount}.`);
+    process.exit(1);
+  }
 
   console.log(`Loaded ${words.length} master word pairs from dataset.`);
 
@@ -69,7 +80,8 @@ async function seed() {
     await setDoc(docRef, {
       categoryId: slug,
       categoryName: category,
-      version: 4,
+      version: 5,
+      sourceSha256: manifest.sourceSha256,
       totalPairs: pairs.length,
       pairs: pairs,
       updatedAt: new Date().toISOString()
@@ -80,8 +92,11 @@ async function seed() {
   console.log('Writing catalog metadata version...');
   const metaRef = doc(db, 'catalog_metadata', 'version');
   await setDoc(metaRef, {
-    version: '4.0.0',
-    dataset: 'imposter_master_dataset_v4_indirect_hints',
+    version: '5.0.0',
+    dataset: 'imposter_game_master_dataset_v5_relatable',
+    sourceFile: manifest.sourceFile,
+    sourceSheet: manifest.sourceSheet,
+    sourceSha256: manifest.sourceSha256,
     totalCategories: categories.length,
     totalPairs: words.length,
     categories: categories,
@@ -102,6 +117,6 @@ async function seed() {
 seed().catch((err) => {
   console.error('\nSeed Failed with Error:');
   console.error(err);
-  console.log('\nNOTE: If you see "PERMISSION_DENIED", ensure your Firestore Database is created and in Test Mode in Firebase Console.');
+  console.log('\nNOTE: PERMISSION_DENIED means this client-side seeder is not authorized by your Firestore rules. Use an authenticated deployment identity or a service-account based admin seeder; do not weaken production rules just to seed content.');
   process.exit(1);
 });

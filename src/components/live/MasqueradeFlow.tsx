@@ -81,7 +81,7 @@ function Players({ back, next }: { back: () => void; next: () => void }) {
   </View>;
 }
 
-function Rules({ back, deal }: { back: () => void; deal: () => void }) {
+function Rules({ back, deal }: { back: () => void; deal: () => void | Promise<void> }) {
   const game = useGameStore();
   const { width, fontScale } = useWindowDimensions();
   const compact = width < 380 || fontScale > 1.15;
@@ -109,7 +109,7 @@ function Rules({ back, deal }: { back: () => void; deal: () => void }) {
       })}
     </View>
     <View style={{ flexDirection: 'row', gap: 12, paddingVertical: 18, borderTopWidth: 1, borderColor: STAGE.rule, marginBottom: 8 }}><Icon name="ticket-outline" color={STAGE.brass} /><Body size={13}>{game.playerCount} players · {game.imposterCount} {game.imposterCount === 1 ? 'imposter' : 'imposters'}{`\n`}{game.selectedCategory}</Body></View>
-    <Action title="Deal the roles" onPress={deal} />
+      <Action title={game.isLoadingWords ? 'Opening the playbill…' : 'Deal the roles'} disabled={game.isLoadingWords} onPress={() => { void deal(); }} />
   </View>;
 }
 
@@ -162,7 +162,7 @@ function Reveal({ leave }: { leave: () => void }) {
       <Navigation position={`${game.currentRevealIndex + 1} of ${game.players.length}`} />
       <Body size={14}>Pass the phone to</Body><Heading size={46} style={{ marginTop: 4 }}>{player.name}</Heading>
       <Body style={{ marginTop: 12, marginBottom: 24 }}>For your eyes only. Hold the card, then let go.</Body>
-      <Pressable {...keys as any} accessibilityRole="button" accessibilityLabel={`Sealed card for ${player.name}`} accessibilityHint="Hold this card to reveal. Release to hide." delayLongPress={MOTION.revealHold} onPressIn={begin} onLongPress={reveal} onPressOut={hide} onTouchCancel={hide}
+      <Pressable {...keys as any} accessibilityRole="button" accessibilityLabel={peek ? `${player.role === 'imposter' ? 'Imposter' : 'Citizen'}. ${player.assignedWordOrHint || 'No word or hint'}` : `Sealed card for ${player.name}`} accessibilityHint={peek ? 'Release to hide. Screen reader action: Conceal role.' : 'Hold this card to reveal. Release to hide. Screen reader action: Reveal role.'} accessibilityActions={[{ name: 'reveal', label: 'Reveal role' }, { name: 'conceal', label: 'Conceal role' }]} onAccessibilityAction={(event) => { if (event.nativeEvent.actionName === 'reveal') { held.current = true; reveal(); held.current = false; } else if (event.nativeEvent.actionName === 'conceal') hide(); }} delayLongPress={MOTION.revealHold} onPressIn={begin} onLongPress={reveal} onPressOut={hide} onTouchCancel={hide}
         style={({ focused }: any) => ({ backgroundColor: STAGE.paper, borderRadius: 16, overflow: 'hidden', minHeight: 330, borderWidth: 2, borderColor: focused ? STAGE.brass : STAGE.paper })}>
         <View style={{ padding: 24, minHeight: 326, justifyContent: 'space-between', gap: 20 }}>
           {peek ? <>
@@ -215,7 +215,8 @@ function Discussion({ leave }: { leave: () => void }) {
   return <View>
     <Navigation position={`Round ${game.roundNumber}`} /><Heading>Read the room.</Heading><Body style={s.intro}>One clue each. Listen for the act that doesn’t fit.</Body>
     <View style={{ paddingVertical: 20, marginBottom: 28, borderTopWidth: 1, borderBottomWidth: 1, borderColor: STAGE.brass, gap: 6 }}><View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><Icon name="mic-outline" color={STAGE.brass} size={18} /><Label color={STAGE.brass}>Starts every round</Label></View><Heading size={34}>{starter?.name}</Heading><Body size={12}>{starter?.isEliminated ? 'They’re out. Start with the next active player in order.' : 'Then continue in entered name order.'}</Body></View>
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}><Label>The cast</Label><Label>{game.players.filter((player) => !player.isEliminated).length} active</Label></View>
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}><Label>Vote together</Label><Label>{game.players.filter((player) => !player.isEliminated).length} active</Label></View>
+    <Body size={12} style={{ marginBottom: 12 }}>After everyone votes in person, tap the player the room chose.</Body>
     <Rule />{game.players.map((player, index) => <PlayerLine key={player.id} player={player} index={index} starter={player.id === game.discussionStarterId} selected={player.id === selectedId} choose={() => setSelectedId(selectedId === player.id ? null : player.id)} />)}
     {selected ? <View style={{ marginTop: 24, gap: 12 }}><Heading size={30}>Eliminate {selected.name}?</Heading><Body size={13}>Confirm after everyone has voted in person.</Body><Action title="Confirm elimination" onPress={() => game.eliminatePlayer(selected.id)} /><TextAction title="Choose someone else" onPress={() => setSelectedId(null)} /></View> : <View style={s.footer}><Action title="Another clue round" secondary onPress={game.skipRound} /><Body size={12} style={{ textAlign: 'center', marginTop: 12 }}>Vote in person, then select a name together.</Body></View>}
     <TextAction title="Leave this match" onPress={leave} /><Elimination />
@@ -228,7 +229,7 @@ function Ended({ rematch, changeGame, newGroup }: { rematch: () => void; changeG
   useEffect(() => { haptic('result'); }, []);
   return <View>
     <Navigation position={`${game.roundNumber} ${game.roundNumber === 1 ? 'round' : 'rounds'}`} />
-    <StageArt small outcome /><Heading size={52}>{citizens ? 'Truth takes\nthe spotlight.' : 'A brilliant\ndeception.'}</Heading>
+    <StageArt small outcome victory={citizens ? 'citizens' : 'imposters'} /><Heading size={52}>{citizens ? 'Truth takes\nthe spotlight.' : 'A brilliant\ndeception.'}</Heading>
     <Text style={{ fontFamily: TYPE.italic, color: STAGE.brass, fontSize: 29, lineHeight: 35, marginTop: 14 }}>{citizens ? 'Citizens win.' : 'Imposters win.'}</Text>
     <Body style={{ marginTop: 10, marginBottom: 28 }}>{citizens ? 'Every imposter has been uncovered.' : 'Imposters now equal or outnumber the citizens.'}</Body>
     <View style={{ backgroundColor: STAGE.paper, borderRadius: 12, padding: 22, gap: 15, marginBottom: 28 }}><Heading paper italic size={28}>Secrets, unmasked.</Heading><Rule paper /><View style={{ gap: 5 }}><Label paper>Citizens’ word</Label><Heading paper size={31}>{game.activeWordEntry?.mainWord}</Heading></View><Rule paper /><View style={{ gap: 5 }}><Label paper>{game.selectedMode === 'imposter_gets_clue' ? 'Imposters’ hint' : 'Imposters’ word'}</Label><Heading paper size={28}>{game.selectedMode === 'everyone_gets_word' ? game.activeWordEntry?.imposterWord : game.selectedMode === 'imposter_gets_clue' ? game.activeWordEntry?.imposterHint : 'No word or hint'}</Heading></View></View>
@@ -258,7 +259,7 @@ export function MasqueradeFlow() {
   }, [game.phase, step]);
   return <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, backgroundColor: STAGE.bg }}>
     <ScrollView key={`${screen}-${game.phase === 'reveal' ? game.currentRevealIndex : ''}`} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ flexGrow: 1, alignItems: 'center', paddingHorizontal: width < 350 ? 16 : 24, paddingTop: 12, paddingBottom: 28 }}>
-      <Animated.View entering={reduced ? undefined : FadeIn.duration(MOTION.page)} style={{ width: '100%', maxWidth: 520, flexGrow: 1 }}>
+      <Animated.View entering={reduced ? undefined : FadeIn.duration(MOTION.page)} style={{ width: '100%', maxWidth: 520, flexGrow: Platform.OS === 'web' && width > 600 && screen === 'welcome' ? 0 : 1, justifyContent: Platform.OS === 'web' && width > 600 && screen === 'welcome' ? 'center' : undefined }}>
         {screen === 'welcome' && <Welcome next={() => setStep('players')} />}
         {screen === 'players' && <Players back={() => setStep('welcome')} next={() => setStep('rules')} />}
         {screen === 'rules' && <Rules back={() => setStep('players')} deal={game.startNewGame} />}
